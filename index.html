@@ -782,7 +782,7 @@ async function doAuth() {
   $('auth-btn').disabled = true;
   hideEl($('auth-err'));
 
-  const email = `${username.toLowerCase()}@bloxxytrade.internal`;
+ const email = `${username.toLowerCase()}@bloxytrade.lol`;
   try {
     if (authMode === 'signup') {
       const { error } = await sb.auth.signUp({
