@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bloxxytrade — Roblox Trading Marketplace</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#07090f;--panel:#0d1220;--card:#111827;--border:#1e2d45;--gold:#f0b429;--text:#dde4f0;--muted:#5a6a82;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--purple:#a78bfa;--orange:#f97316;--discord:#5865F2}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--panel)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+h1,h2,h3,h4{font-family:'Syne',sans-serif}
+.hidden{display:none!important}
+.page{display:none}.page.active{display:block}
+input,textarea,select{background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;width:100%;outline:none;transition:border-color .18s,box-shadow .18s}
+input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px #f0b42918}
+select option{background:var(--panel)}textarea{resize:vertical}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;border:none;border-radius:9px;padding:10px 20px;font-size:14px;font-weight:600;transition:all .15s}
+button:active{transform:scale(.97)}button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-gold{background:var(--gold);color:#000;box-shadow:0 0 16px #f0b42924}.btn-gold:hover:not(:disabled){background:#e6aa24}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-ghost:hover{background:var(--card);color:var(--text)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.4px}
+.container{max-width:1200px;margin:0 auto;padding:0 20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px}
+.label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:7px}
+.form-group{margin-bottom:16px}.sec-title{font-size:24px;font-weight:800;letter-spacing:-.5px}.sec-sub{color:var(--muted);font-size:14px;margin-top:4px}
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:14px}
+.spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading .logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;letter-spacing:-1px}
+#loading .logo-text .g{color:var(--gold)}
+#cfg-warning{position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.cfg-box{background:var(--card);border:2px solid var(--gold);border-radius:16px;padding:32px;max-width:480px;width:100%;text-align:center}
+.cfg-box h2{color:var(--gold);margin-bottom:12px;font-size:20px}.cfg-box p{color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:8px}
+.cfg-box code{background:var(--panel);border:1px solid var(--border);padding:3px 8px;border-radius:5px;font-size:12px;color:var(--text);display:block;margin:8px 0;text-align:left}
+#toasts{position:fixed;top:68px;right:16px;z-index:9000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:13px;min-width:220px;max-width:300px;animation:toastIn .25s ease;pointer-events:auto}
+.toast.s{border-left:3px solid var(--green);color:var(--green)}.toast.e{border-left:3px solid var(--red);color:var(--red)}.toast.i{border-left:3px solid var(--gold);color:var(--gold)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden}
+#auth::before{content:'';position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(circle,#f0b42909 0%,transparent 70%);pointer-events:none}
+.auth-box{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 24px 60px #0009;position:relative}
+.auth-logo{text-align:center;margin-bottom:28px}.auth-logo h1{font-size:42px;letter-spacing:-2px;line-height:1}.auth-logo h1 .g{color:var(--gold)}
+.auth-logo p{color:var(--muted);font-size:11px;margin-top:6px;letter-spacing:.8px;text-transform:uppercase}
+.auth-tabs{display:flex;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:22px}
+.auth-tab{flex:1;padding:9px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-weight:500;font-size:14px;cursor:pointer;transition:all .18s;font-family:'DM Sans',sans-serif}
+.auth-tab.active{background:var(--card);color:var(--text);font-weight:600;border:1px solid var(--border)}
+.auth-err{background:#ef444418;border:1px solid #ef444444;color:var(--red);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+.bonus-note{text-align:center;font-size:12px;color:var(--muted);margin-top:8px}.bonus-note span{color:var(--gold);font-weight:700}
+#navbar{background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;padding:0 20px}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;height:56px;gap:14px}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-1px;cursor:pointer;flex-shrink:0}.nav-logo .g{color:var(--gold)}
+.nav-links{display:flex;gap:2px;flex:1}
+.nav-link{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:6px 12px;font-size:13px;font-weight:500;cursor:pointer;border-radius:5px 5px 0 0;transition:all .15s;font-family:'DM Sans',sans-serif}
+.nav-link:hover{color:var(--text)}.nav-link.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:700}
+.nav-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.nav-bal{display:flex;align-items:center;gap:5px;background:#f0b42914;border:1px solid #f0b42933;border-radius:8px;padding:5px 11px;font-size:13px;font-weight:700;color:var(--gold)}
+.nav-bal .sym{font-family:'Syne',sans-serif;font-size:11px}
+.nav-user{display:flex;align-items:center;gap:7px;cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:8px;transition:all .15s}
+.nav-user:hover{border-color:var(--gold)}.nav-user .uname{font-size:13px;font-weight:500;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Syne',sans-serif;flex-shrink:0;font-size:13px}
+#pg-marketplace{padding:28px 0}
+.mp-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.mp-filters{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.mp-filters input{max-width:250px;flex:1;min-width:160px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.pill.active{background:#f0b42914;border-color:#f0b42966;color:var(--gold);font-weight:700}.pill:hover:not(.active){border-color:#f0b42944;color:var(--text)}
+.ads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.ad-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all .2s;cursor:pointer}
+.ad-card:hover{border-color:#f0b42966;transform:translateY(-3px);box-shadow:0 8px 24px #0006}
+.ad-img{height:170px;overflow:hidden;background:var(--panel);position:relative}
+.ad-img img{width:100%;height:100%;object-fit:cover;transition:transform .3s;display:block}
+.ad-card:hover .ad-img img{transform:scale(1.05)}
+.ad-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;opacity:.25}
+.ad-badges{position:absolute;top:8px;left:8px;display:flex;gap:5px}
+.ad-body{padding:14px}.ad-title{font-size:14px;font-weight:700;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ad-desc{font-size:12px;color:var(--muted);line-height:1.5;height:36px;overflow:hidden;margin-bottom:11px}
+.ad-price{display:flex;align-items:center;gap:4px;margin-bottom:10px}
+.ad-price .sym{font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);font-size:11px}
+.ad-price .amt{font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);font-size:18px}
+.ad-price .ago{margin-left:auto;font-size:11px;color:var(--muted)}
+.ad-footer{display:flex;align-items:center;justify-content:space-between}
+.ad-seller{display:flex;align-items:center;gap:5px}.ad-seller .sname{font-size:12px;color:var(--muted)}.ad-seller .srep{font-size:11px;color:var(--gold)}
+.empty{text-align:center;padding:70px 0;color:var(--muted)}.empty .ei{font-size:48px;margin-bottom:12px}
+#pg-post{padding:28px 0}.post-card{padding:28px;max-width:680px}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.img-prev{border-radius:10px;overflow:hidden;height:150px;background:var(--panel);border:1px solid var(--border);margin-top:9px}
+.img-prev img{width:100%;height:100%;object-fit:cover;display:block}
+.price-wrap{position:relative}.price-wrap .sym{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gold);font-weight:800;font-family:'Syne',sans-serif;font-size:14px;pointer-events:none}
+.price-wrap input{padding-left:36px}
+#pg-chat{padding:20px 0}
+.chat-layout{display:grid;grid-template-columns:1fr 215px;gap:14px;height:calc(100vh - 138px)}
+.chat-main{background:var(--card);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.chat-hdr{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.chat-hdr-info{flex:1}.chat-hdr-info .cname{font-weight:600;font-size:15px}.chat-hdr-info .cstat{font-size:11px;color:var(--green)}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.msg-sys{text-align:center}.msg-sys span{display:inline-block;background:#3b82f618;border:1px solid #3b82f633;color:var(--blue);border-radius:20px;padding:5px 14px;font-size:12px;max-width:85%;line-height:1.4}
+.msg-sys.warn span{background:#f0b42914;border-color:#f0b42933;color:var(--gold)}.msg-sys.ok span{background:#22c55e14;border-color:#22c55e33;color:var(--green)}.msg-sys.bad span{background:#ef444414;border-color:#ef444433;color:var(--red)}
+.msg-row{display:flex;gap:8px;align-items:flex-end}.msg-row.me{flex-direction:row-reverse}
+.msg-bubble{max-width:70%;padding:9px 13px;border-radius:12px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.msg-row:not(.me) .msg-bubble{background:var(--panel);border:1px solid var(--border);border-bottom-left-radius:3px}
+.msg-row.me .msg-bubble{background:#f0b42916;border:1px solid #f0b42940;border-bottom-right-radius:3px}
+.msg-row.mm-msg .msg-bubble{background:#a78bfa18;border:1px solid #a78bfa44}
+.msg-sender{font-size:11px;color:var(--muted);margin-bottom:3px}.msg-time{font-size:10px;color:var(--muted);margin-top:3px}.msg-row.me .msg-time{text-align:right}
+.chat-inp{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}.chat-inp input{flex:1}
+.chat-closed-note{text-align:center;color:var(--muted);font-size:13px;padding:8px;flex-shrink:0;border-top:1px solid var(--border)}
+.chat-side{display:flex;flex-direction:column;gap:11px;overflow-y:auto}
+.cpanel{padding:14px;border-radius:14px;border:1px solid var(--border)}.clabel{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:10px}
+.abt{width:100%;text-align:left;padding:9px 12px;border-radius:9px;font-size:12px;font-weight:600;margin-bottom:6px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:filter .15s}
+.abt:last-child{margin-bottom:0}.abt:hover:not(:disabled){filter:brightness(1.25)}
+.abt.mm{background:#f0b42914;border:1px solid #f0b42933;color:var(--gold)}.abt.recv{background:#22c55e14;border:1px solid #22c55e44;color:var(--green)}
+.abt.scam{background:#ef444414;border:1px solid #ef444444;color:var(--red)}.abt.ghost{background:#5a6a8214;border:1px solid #5a6a8244;color:var(--muted)}
+.abt.disp{background:#f9731614;border:1px solid #f9731644;color:var(--orange)}.abt.disc{background:#5865F214;border:1px solid #5865F244;color:var(--discord)}
+.mm-active{background:#f0b42914;border:1px solid #f0b42933;border-radius:9px;padding:8px 12px;font-size:12px;color:var(--gold);margin-bottom:6px}
+.trade-closed-badge{border-radius:9px;padding:10px 12px;font-size:12px;text-align:center;margin-bottom:6px}
+.tstat{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}.tstat .tsl{color:var(--muted)}
+#pg-gamble{padding:28px 0}
+.gl-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.gamble-layout{display:grid;grid-template-columns:1fr 230px;gap:16px}
+.gtabs{display:flex;gap:8px;margin-bottom:20px}
+.gtab{padding:9px 20px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s;font-family:'DM Sans',sans-serif}
+.gtab.active{background:#f0b42914;border-color:var(--gold);color:var(--gold);font-weight:700}
+.gamble-area{padding:28px;text-align:center;min-height:340px}
+.bet-presets{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;justify-content:center}
+.bpreset{padding:5px 12px;border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.bpreset:hover,.bpreset.active{border-color:var(--gold);color:var(--gold);background:#f0b42914}
+.bet-wrap{position:relative;max-width:240px;margin:0 auto 22px}.bet-wrap .sym{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gold);font-weight:800;font-family:'Syne',sans-serif;font-size:14px;pointer-events:none}
+.bet-wrap input{padding-left:36px;text-align:center}
+.game-display{margin-bottom:22px}
+.coin-em{font-size:80px;display:inline-block}.coin-spin{animation:cspin .18s linear infinite}
+@keyframes cspin{0%{transform:rotateY(0deg) scaleX(1)}50%{transform:rotateY(90deg) scaleX(.05)}100%{transform:rotateY(180deg) scaleX(1)}}
+.side-btns{display:flex;gap:12px;justify-content:center;margin-bottom:22px}
+.side-btn{padding:10px 32px;border-radius:10px;font-weight:700;font-size:15px;background:var(--panel);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.side-btn.active{background:var(--gold);border-color:var(--gold);color:#000}
+.dice-em{font-size:90px;display:inline-block}.dice-spin{animation:dspin .22s linear infinite}
+@keyframes dspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.slots-wrap{display:flex;justify-content:center;gap:10px;margin-bottom:22px}
+.sreel{width:82px;height:82px;background:var(--panel);border:2px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:36px;transition:border-color .3s}
+.sreel.win{border-color:var(--gold);box-shadow:0 0 16px #f0b42930}
+.game-res{margin-top:18px;padding:13px 20px;border-radius:11px}
+.game-res.win{background:#22c55e18;border:1px solid #22c55e44}.game-res.lose{background:#ef444418;border:1px solid #ef444444}
+.game-res .ramt{font-size:20px;font-weight:800;font-family:'Syne',sans-serif}
+.game-res.win .ramt{color:var(--green)}.game-res.lose .ramt{color:var(--red)}
+.hist-side{padding:16px;border-radius:14px;border:1px solid var(--border);height:fit-content}
+.hist-row{display:flex;justify-content:space-between;align-items:center;padding:7px 9px;background:var(--panel);border-radius:8px;font-size:12px;margin-bottom:6px}
+.hist-row .ht{font-weight:600}.hist-row .htime{color:var(--muted);font-size:10px}.hist-row .hamt{font-weight:700}
+.hist-row.win .hamt{color:var(--green)}.hist-row.lose .hamt{color:var(--red)}
+.gamble-note{margin-top:auto;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);line-height:1.6}
+#pg-profile{padding:28px 0}
+.prof-hero{padding:28px;display:flex;align-items:center;gap:22px;margin-bottom:18px;flex-wrap:wrap}
+.prof-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.scard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center}
+.slbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:7px}
+.sval{font-size:22px;font-weight:800;font-family:'Syne',sans-serif}
+.prof-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.ppanel{padding:20px}.ppanel h3{font-size:15px;font-weight:700;margin-bottom:14px}
+.lrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}.lrow:last-child{border-bottom:none}
+.lthumb{width:44px;height:44px;border-radius:8px;object-fit:cover;background:var(--panel);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--muted)}
+.linfo{flex:1;min-width:0}.lname{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lprice{font-size:12px;color:var(--gold);font-weight:600;margin-top:2px}
+.trow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px}.trow:last-child{border-bottom:none}
+.tname{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.tmeta{font-size:11px;color:var(--muted);margin-top:2px}
+#pg-support{padding:28px 0}
+.disc-banner{background:#5865F214;border:1px solid #5865F233;border-radius:14px;padding:24px;margin-bottom:24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.disc-banner h2{font-size:19px;font-weight:700;margin-bottom:6px}.disc-banner p{color:var(--muted);font-size:14px;line-height:1.6}
+.supp-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px}
+.sqcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:border-color .2s}
+.sqcard:hover{border-color:#f0b42944}.sqcard .si{font-size:28px;margin-bottom:9px}.sqcard h4{font-size:14px;margin-bottom:4px}.sqcard p{font-size:12px;color:var(--muted)}
+.faq-item{background:var(--card);border:1px solid var(--border);border-radius:11px;margin-bottom:8px;overflow:hidden;transition:border-color .2s}
+.faq-item.open{border-color:#f0b42944}
+.faq-q{width:100%;background:transparent;border:none;color:var(--text);padding:14px 18px;text-align:left;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.faq-q .plus{color:var(--gold);font-size:18px;transition:transform .2s;flex-shrink:0}.faq-item.open .faq-q .plus{transform:rotate(45deg)}
+.faq-a{padding:0 18px 15px;color:var(--muted);font-size:14px;line-height:1.7}
+.supp-footer{margin-top:28px;padding:18px;background:var(--panel);border:1px solid var(--border);border-radius:12px;text-align:center;font-size:13px;color:var(--muted)}
+.supp-footer a{color:var(--gold);text-decoration:none;font-weight:600;cursor:pointer}
+@media(max-width:720px){.chat-layout{grid-template-columns:1fr}.chat-side{display:none}.gamble-layout{grid-template-columns:1fr}.prof-stats{grid-template-columns:repeat(2,1fr)}.prof-grid{grid-template-columns:1fr}.fg2{grid-template-columns:1fr}.supp-quick{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="loading"><div class="logo-text"><span class="g">Bloxy</span>trade</div><div class="spinner"></div></div>
+<div id="cfg-warning" class="hidden">
+  <div class="cfg-box">
+    <h2>⚙️ Setup Required</h2>
+    <p>Add your Supabase credentials inside <strong>index.html</strong>:</p>
+    <code>const SUPABASE_URL = 'https://xyz.supabase.co';</code>
+    <code>const SUPABASE_ANON = 'your-anon-key';</code>
+    <p style="margin-top:12px">Then run <strong>schema.sql</strong> in your Supabase SQL Editor.</p>
+  </div>
+</div>
+<div id="toasts"></div>
+<div id="auth" class="hidden">
+  <div>
+    <div class="auth-logo">
+      <h1><span class="g">Bloxy</span>trade</h1>
+      <p>The #1 Roblox Trading Marketplace</p>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:10px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--muted)"> Middleman Protection</span>
+        <span style="font-size:11px;color:var(--muted)"> Real-time Chat</span>
+        <span style="font-size:11px;color:var(--muted)"> Scam Shield</span>
+      </div>
+    </div>
+    <div class="auth-box">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')">Log In</button>
+        <button class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</button>
+      </div>
+      <div id="auth-err" class="auth-err hidden"></div>
+      <div class="form-group">
+        <label class="label">Username</label>
+        <input id="auth-username" type="text" placeholder="Your username" onkeydown="if(event.key==='Enter')doAuth()">
+      </div>
+      <div class="form-group">
+        <label class="label">Password</label>
+        <input id="auth-password" type="password" placeholder="Your password" onkeydown="if(event.key==='Enter')doAuth()">
+      </div>
+      <button id="auth-btn" class="btn-gold" style="width:100%;padding:12px" onclick="doAuth()">Log In</button>
+      <p id="signup-note" class="bonus-note hidden">🎁 Get <span>B$100</span> welcome bonus on signup!</p>
+    </div>
+    <p style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted)">Scammed? Join our <span style="color:var(--discord);cursor:pointer;font-weight:600" onclick="window.open('https://discord.gg/bloxxytrade','_blank')">Discord Support</span></p>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <nav id="navbar">
+    <div class="nav-inner">
+      <div class="nav-logo" onclick="goPage('marketplace')"><span class="g">Bloxy</span>trade</div>
+      <div class="nav-links">
+        <button class="nav-link active" data-page="marketplace" onclick="goPage('marketplace')">Market</button>
+        <button class="nav-link" data-page="gamble" onclick="goPage('gamble')">🎰 Casino</button>
+        <button class="nav-link" data-page="profile" onclick="goPage('profile')">Profile</button>
+        <button class="nav-link" data-page="support" onclick="goPage('support')">Support</button>
+      </div>
+      <div class="nav-right">
+        <div class="nav-bal"><span class="sym">B$</span><span id="nav-balance">0</span></div>
+        <div class="nav-user" onclick="goPage('profile')">
+          <div id="nav-avatar" class="avatar" style="width:28px;height:28px;font-size:11px;color:#fff"></div>
+          <span class="uname" id="nav-username"></span>
+        </div>
+        <button class="btn-ghost" style="padding:6px 12px;font-size:12px" onclick="doSignOut()">Out</button>
+      </div>
+    </div>
+  </nav>
+  <div id="pg-marketplace" class="page active">
+    <div class="container">
+      <div class="mp-hdr">
+        <div><div class="sec-title">Marketplace</div><div class="sec-sub" id="ads-count"></div></div>
+        <button class="btn-gold" onclick="goPage('post')">+ Post Ad</button>
+      </div>
+      <div class="mp-filters">
+        <input id="mp-search" type="text" placeholder="🔍  Search listings..." oninput="filterAds()">
+        <div class="pills" id="cat-pills"></div>
+        <select id="mp-sort" style="width:170px" onchange="filterAds()">
+          <option value="newest">Newest First</option>
+          <option value="price_asc">Price: Low → High</option>
+          <option value="price_desc">Price: High → Low</option>
+        </select>
+      </div>
+      <div class="ads-grid" id="ads-grid"></div>
+    </div>
+  </div>
+  <div id="pg-post" class="page">
+    <div class="container">
+      <button class="btn-ghost" style="margin-bottom:18px;padding:7px 14px;font-size:13px" onclick="goPage('marketplace')">← Back to Market</button>
+      <div class="sec-title" style="margin-bottom:4px">Post a Trade Ad</div>
+      <div class="sec-sub" style="margin-bottom:22px">Fill in your listing details</div>
+      <div class="card post-card">
+        <div class="fg2">
+          <div class="form-group" style="margin:0"><label class="label">Listing Type</label><select id="post-type"><option value="sell">Selling for B$</option><option value="swap">Looking to Swap</option></select></div>
+          <div class="form-group" style="margin:0"><label class="label">Category</label><select id="post-category"><option>Hats</option><option>Robux</option><option>Packages</option><option>Accessories</option><option>Other</option></select></div>
+        </div>
+        <div class="form-group"><label class="label">Title</label><input id="post-title" placeholder="e.g. Dominus Empyreus — Excellent Condition"></div>
+        <div class="form-group"><label class="label">Description</label><textarea id="post-desc" rows="4" placeholder="Describe your item, condition, delivery method..."></textarea></div>
+        <div class="form-group">
+          <label class="label">Image URL</label>
+          <input id="post-img" placeholder="https://i.imgur.com/..." oninput="previewImg()">
+          <div id="img-prev" class="img-prev hidden"><img id="img-prev-img" src="" alt="preview" onerror="this.style.opacity='.15'"></div>
+        </div>
+        <div class="form-group"><label class="label">Price (B$)</label><div class="price-wrap"><span class="sym">B$</span><input id="post-price" type="number" min="1" placeholder="0"></div></div>
+        <button class="btn-gold" style="width:100%;padding:13px;font-size:16px" onclick="submitAd()">Post Listing</button>
+      </div>
+    </div>
+  </div>
+  <div id="pg-chat" class="page">
+    <div class="container">
+      <button class="btn-ghost" style="margin-bottom:14px;padding:7px 14px;font-size:13px" onclick="leaveChat()">← Back to Market</button>
+      <div class="chat-layout">
+        <div class="chat-main">
+          <div class="chat-hdr" id="chat-hdr">
+            <div class="avatar" id="chat-av" style="width:36px;height:36px;font-size:14px;color:#fff"></div>
+            <div class="chat-hdr-info"><div class="cname" id="chat-other-name">Loading...</div><div class="cstat" id="chat-other-stat">● Online</div></div>
+            <div id="chat-mm-badge"></div><div id="chat-status-badge"></div>
+          </div>
+          <div class="chat-msgs" id="chat-msgs"></div>
+          <div id="chat-inp-area" class="chat-inp">
+            <input id="chat-input" placeholder="Type a message… (Enter to send)" onkeydown="if(event.key==='Enter')sendChatMsg()">
+            <button class="btn-gold" style="flex-shrink:0;padding:0 16px" onclick="sendChatMsg()">Send</button>
+          </div>
+          <div id="chat-closed-note" class="chat-closed-note hidden">This trade is closed</div>
+        </div>
+        <div class="chat-side" id="chat-side">
+          <div class="cpanel card" id="chat-ad-panel" style="padding:0;overflow:hidden">
+            <div id="chat-ad-img-wrap" style="height:110px;overflow:hidden;background:var(--panel)"></div>
+            <div style="padding:14px">
+              <div class="lname" id="chat-ad-title"></div>
+              <div style="display:flex;align-items:center;gap:4px;margin:6px 0"><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);font-size:11px">B$</span><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);font-size:17px" id="chat-ad-price"></span></div>
+              <div id="chat-ad-badges" style="display:flex;gap:5px;margin-top:6px"></div>
+            </div>
+          </div>
+          <div class="cpanel card" id="chat-actions"><div class="clabel">Trade Actions</div><div id="chat-action-btns"></div></div>
+          <div class="cpanel card" id="chat-trader-info">
+            <div class="clabel">Trader Info</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <div class="avatar" id="chat-trader-av" style="width:38px;height:38px;font-size:14px;color:#fff"></div>
+              <div><div style="font-weight:700;font-size:14px" id="chat-trader-name"></div><div style="font-size:11px;color:var(--muted)" id="chat-trader-trades"></div></div>
+            </div>
+            <div id="chat-trader-stats"></div>
+          </div>
+          <div class="cpanel" style="background:#3b82f60e;border:1px solid #3b82f622;border-radius:12px">
+            <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:5px">🔒 Safety Tips</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.6">Always use a middleman for high-value trades. Never send items without middleman approval. Report scammers on Discord immediately.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="pg-gamble" class="page">
+    <div class="container">
+      <div class="gl-header">
+        <div><div class="sec-title">B$ Casino</div><div class="sec-sub">Earned through successful trades</div></div>
+        <div class="nav-bal" style="padding:10px 18px"><span class="sym">B$</span><span id="gamble-balance" style="font-size:20px">0</span></div>
+      </div>
+      <div class="gamble-layout">
+        <div>
+          <div class="gtabs">
+            <button class="gtab active" onclick="switchGTab('coinflip',this)">🪙 Coin Flip</button>
+            <button class="gtab" onclick="switchGTab('dice',this)">🎲 Dice</button>
+            <button class="gtab" onclick="switchGTab('slots',this)">🎰 Slots</button>
+          </div>
+          <div id="gt-coinflip" class="card gamble-area">
+            <div class="bet-presets"><button class="bpreset" onclick="setBet(50)">50</button><button class="bpreset" onclick="setBet(100)">100</button><button class="bpreset" onclick="setBet(250)">250</button><button class="bpreset" onclick="setBet(500)">500</button><button class="bpreset" onclick="setBet(1000)">1k</button><button class="bpreset" onclick="betHalf()">½</button><button class="bpreset" onclick="betMax()">Max</button></div>
+            <div class="bet-wrap"><span class="sym">B$</span><input id="bet-coin" type="number" min="1" value="50"></div>
+            <div class="game-display"><div class="coin-em" id="coin-display">🪙</div></div>
+            <div class="side-btns"><button class="side-btn active" id="sbtn-heads" onclick="selectSide('heads')">Heads</button><button class="side-btn" id="sbtn-tails" onclick="selectSide('tails')">Tails</button></div>
+            <button class="btn-gold" id="flip-btn" onclick="playCoinFlip()" style="padding:11px 44px;font-size:15px">Flip Coin</button>
+            <div id="coin-result"></div>
+          </div>
+          <div id="gt-dice" class="card gamble-area hidden">
+            <div class="bet-presets"><button class="bpreset" onclick="setBet2(50)">50</button><button class="bpreset" onclick="setBet2(100)">100</button><button class="bpreset" onclick="setBet2(250)">250</button><button class="bpreset" onclick="setBet2(500)">500</button><button class="bpreset" onclick="setBet2(1000)">1k</button><button class="bpreset" onclick="betHalf2()">½</button><button class="bpreset" onclick="betMax2()">Max</button></div>
+            <div class="bet-wrap"><span class="sym">B$</span><input id="bet-dice" type="number" min="1" value="50"></div>
+            <p style="color:var(--muted);font-size:13px;margin-bottom:18px">Roll 4, 5 or 6 to win — 50% chance, 2× payout</p>
+            <div class="game-display"><div class="dice-em" id="dice-display">🎲</div></div>
+            <button class="btn-gold" id="dice-btn" onclick="playDice()" style="padding:11px 44px;font-size:15px">Roll Dice</button>
+            <div id="dice-result"></div>
+          </div>
+          <div id="gt-slots" class="card gamble-area hidden">
+            <div class="bet-presets"><button class="bpreset" onclick="setBet3(50)">50</button><button class="bpreset" onclick="setBet3(100)">100</button><button class="bpreset" onclick="setBet3(250)">250</button><button class="bpreset" onclick="setBet3(500)">500</button><button class="bpreset" onclick="setBet3(1000)">1k</button><button class="bpreset" onclick="betHalf3()">½</button><button class="bpreset" onclick="betMax3()">Max</button></div>
+            <div class="bet-wrap"><span class="sym">B$</span><input id="bet-slots" type="number" min="1" value="50"></div>
+            <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Match 3 to win — 💎💎💎 = 10× jackpot!</p>
+            <div class="slots-wrap"><div class="sreel" id="s0">🎰</div><div class="sreel" id="s1">🎰</div><div class="sreel" id="s2">🎰</div></div>
+            <button class="btn-gold" id="slots-btn" onclick="playSlots()" style="padding:11px 44px;font-size:15px">Spin!</button>
+            <div id="slots-result"></div>
+          </div>
+        </div>
+        <div class="hist-side card"><div class="clabel">Bet History</div><div id="gamble-history"><p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No bets yet</p></div><div class="gamble-note">⚠️ Gamble responsibly. B$ has no real-world value.</div></div>
+      </div>
+    </div>
+  </div>
+  <div id="pg-profile" class="page">
+    <div class="container">
+      <div class="card prof-hero" id="prof-hero"></div>
+      <div class="prof-stats" id="prof-stats"></div>
+      <div class="prof-grid">
+        <div class="card ppanel"><h3 id="my-ads-title">My Listings (0)</h3><div id="my-ads-list"><p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No listings yet</p></div></div>
+        <div class="card ppanel"><h3 id="my-trades-title">Trade History (0)</h3><div id="my-trades-list"><p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No trades yet</p></div></div>
+      </div>
+    </div>
+  </div>
+  <div id="pg-support" class="page">
+    <div class="container">
+      <div class="sec-title" style="margin-bottom:4px">Support Center</div>
+      <div class="sec-sub" style="margin-bottom:24px">Help with trades, scams, disputes and more</div>
+      <div class="disc-banner">
+        <div style="font-size:48px;flex-shrink:0">💬</div>
+        <div style="flex:1"><h2>Got Scammed? Contact Us on Discord</h2><p>Our mod team is online 24/7. Bring screenshots, trade ID and a description. We take scam reports very seriously.</p></div>
+        <button class="btn-gold" style="flex-shrink:0;padding:11px 20px" onclick="window.open('https://discord.gg/bloxxytrade','_blank')">Join Discord</button>
+      </div>
+      <div class="supp-quick">
+        <div class="sqcard"><div class="si">🚨</div><h4>Report a Scam</h4><p>Submit evidence to mods via Discord</p></div>
+        <div class="sqcard"><div class="si">🛡️</div><h4>Request Middleman</h4><p>Available in any active trade chat</p></div>
+        <div class="sqcard"><div class="si">⚖️</div><h4>Open a Dispute</h4><p>Mod-reviewed trade resolution</p></div>
+      </div>
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:14px">Frequently Asked Questions</h2>
+      <div id="faq-list"></div>
+      <div class="supp-footer">Still need help? Reach us at <a>support@bloxxytrade.gg</a> or join our <a onclick="window.open('https://discord.gg/bloxxytrade','_blank')">Discord server</a>.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  ⚙️  CONFIG — REPLACE THESE
+// ══════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://ubxwrwrbsqvdkcxqhpvf.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_aA-QAUNUX_xUajumOccGUQ_dfw2PMhZ';
+// ══════════════════════════════════════════════════
+
+const CATS = ['All','Hats','Robux','Packages','Accessories','Other'];
+const FAQS = [
+  ['How do I earn B$?','You earn B$50 per completed trade. You also get B$100 on signup. Spend B$ in the Casino.'],
+  ['What is the Middleman system?','In any trade chat, click "Request Middleman". A system alert fires and a moderator joins to oversee your trade.'],
+  ['I got scammed. What do I do?','Click "Report Scam" in the trade chat, then join our Discord immediately with screenshots and trade ID. Mods are 24/7.'],
+  ['Can B$ be converted to real money?','No. B$ is a virtual currency used only for Casino games. It has no real-world value.'],
+  ['How do I build reputation?','Each completed trade earns +1 rep. At 10 rep you are Trusted, at 50 you are a Pro Trader.'],
+  ['Is it safe to trade here?','Always use Middleman for large trades, never deal outside the platform, report any suspicious behaviour.'],
+  ['Someone is ghosting me?','Open the trade chat and click "Mark Ghosted". The user gets flagged. Report on Discord with proof for a full review.'],
+];
+const AC = ['#7c3aed','#2563eb','#059669','#b45309','#db2777','#0891b2','#dc2626','#0d9488'];
+const STATUS_COLORS = {open:null,received:'var(--green)',scammed:'var(--red)',ghosted:'var(--muted)',disputed:'var(--orange)'};
+
+let sb;
+let S = {
+  profile: null,
+  ads: [], myChats: [],
+  chat: { id:null, data:null, msgs:[], adData:null, otherProfile:null, sub:null },
+  market: { search:'', cat:'All', sort:'newest' },
+};
+
+// ── CRYPTO HELPERS ──────────────────────────────────
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function genToken() {
+  return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)+Date.now().toString(36);
+}
+
+// ── INIT ────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  if (SUPABASE_URL === 'YOUR_SUPABASE_URL') { hide('loading'); show('cfg-warning'); return; }
+  try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON); } catch(e) { hide('loading'); show('cfg-warning'); return; }
+
+  buildFaq(); buildCatPills();
+
+  // Check existing session
+  const token = localStorage.getItem('bxt_session');
+  if (token) {
+    const { data } = await sb.from('profiles').select('*').eq('session_token', token).single();
+    if (data) { S.profile = data; showApp(); hide('loading'); return; }
+    localStorage.removeItem('bxt_session');
+  }
+  hide('loading'); show('auth');
+});
+
+const $ = id => document.getElementById(id);
+const show = id => $( id)?.classList.remove('hidden');
+const hide = id => $( id)?.classList.add('hidden');
+const showEl = el => el?.classList.remove('hidden');
+const hideEl = el => el?.classList.add('hidden');
+
+function toast(msg, type='i') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  $('toasts').appendChild(t);
+  setTimeout(() => t.remove(), 3600);
+}
+
+function ac(username) { return AC[(username?.charCodeAt(0)||0) % AC.length]; }
+function setAvatar(el, username, size=36) {
+  if (!el) return;
+  el.style.background = ac(username);
+  el.style.width = size+'px'; el.style.height = size+'px';
+  el.style.fontSize = Math.round(size*.38)+'px'; el.style.color = '#fff';
+  el.textContent = (username||'?').slice(0,2).toUpperCase();
+}
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = Date.now() - new Date(ts).getTime();
+  if (d < 3600000) return Math.floor(d/60000)+'m ago';
+  if (d < 86400000) return Math.floor(d/3600000)+'h ago';
+  return Math.floor(d/86400000)+'d ago';
+}
+function badge(text, color) { return `<span class="badge" style="background:${color}22;color:${color};border:1px solid ${color}44">${text}</span>`; }
+function bsTag(sz=12) { return `<span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);font-size:${sz}px">B$</span>`; }
+
+// ── AUTH ────────────────────────────────────────────
+let authMode = 'login';
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active',(i===0&&mode==='login')||(i===1&&mode==='signup')));
+  $('auth-btn').textContent = mode==='login'?'Log In':'Create Account';
+  mode==='signup'?show('signup-note'):hide('signup-note');
+  hide('auth-err');
+}
+function showAuthErr(msg) { const el=$('auth-err'); el.textContent=msg; show('auth-err'); }
+
+async function doAuth() {
+  const username = $('auth-username').value.trim();
+  const password = $('auth-password').value;
+  if (!username||!password) return showAuthErr('Please fill in all fields.');
+  if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) return showAuthErr('Username: 3-20 chars, letters/numbers/_ only.');
+  if (password.length < 6) return showAuthErr('Password must be at least 6 characters.');
+
+  $('auth-btn').textContent='...'; $('auth-btn').disabled=true; hide('auth-err');
+
+  try {
+    const hash = await sha256(password);
+    const token = genToken();
+
+    if (authMode === 'signup') {
+      // Check username taken
+      const { data: existing } = await sb.from('profiles').select('id').eq('username', username).single();
+      if (existing) { showAuthErr('Username already taken.'); $('auth-btn').textContent='Create Account'; $('auth-btn').disabled=false; return; }
+      // Create user
+      const { data: newUser, error } = await sb.from('profiles').insert({ username, password_hash: hash, session_token: token, balance: 100 }).select().single();
+      if (error) throw error;
+      S.profile = newUser;
+    } else {
+      const { data: user, error } = await sb.from('profiles').select('*').eq('username', username).eq('password_hash', hash).single();
+      if (error || !user) { showAuthErr('Wrong username or password.'); $('auth-btn').textContent='Log In'; $('auth-btn').disabled=false; return; }
+      // Update session token
+      await sb.from('profiles').update({ session_token: token }).eq('id', user.id);
+      S.profile = { ...user, session_token: token };
+    }
+
+    localStorage.setItem('bxt_session', token);
+    showApp();
+  } catch(e) {
+    showAuthErr(e.message || 'Something went wrong.');
+    $('auth-btn').textContent = authMode==='login'?'Log In':'Create Account';
+    $('auth-btn').disabled = false;
+  }
+}
+
+function doSignOut() {
+  unsubChat();
+  localStorage.removeItem('bxt_session');
+  S.profile = null;
+  hide('app'); show('auth');
+  $('auth-btn').textContent='Log In'; $('auth-btn').disabled=false;
+}
+
+async function showApp() {
+  hide('auth'); show('app');
+  updateNav();
+  await loadAds();
+  renderAds();
+  goPage('marketplace');
+}
+
+// ── NAV ─────────────────────────────────────────────
+function goPage(name) {
+  if (name !== 'chat') unsubChat();
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page===name));
+  $('pg-'+name)?.classList.add('active');
+  if (name==='profile') renderProfile();
+  if (name==='gamble') $('gamble-balance').textContent = (S.profile?.balance||0).toLocaleString();
+}
+
+function updateNav() {
+  if (!S.profile) return;
+  $('nav-balance').textContent = (S.profile.balance||0).toLocaleString();
+  $('nav-username').textContent = S.profile.username;
+  setAvatar($('nav-avatar'), S.profile.username, 28);
+}
+
+async function refreshProfile() {
+  if (!S.profile) return;
+  const { data } = await sb.from('profiles').select('*').eq('id', S.profile.id).single();
+  if (data) { S.profile = data; updateNav(); if ($('gamble-balance')) $('gamble-balance').textContent=(data.balance||0).toLocaleString(); }
+}
+
+async function updateBalance(delta) {
+  if (!S.profile) return;
+  const newBal = Math.max(0, (S.profile.balance||0) + delta);
+  await sb.from('profiles').update({ balance: newBal }).eq('id', S.profile.id);
+  S.profile.balance = newBal;
+  updateNav();
+  if ($('gamble-balance')) $('gamble-balance').textContent = newBal.toLocaleString();
+}
+
+// ── ADS ─────────────────────────────────────────────
+async function loadAds() {
+  const { data } = await sb.from('ads').select('*, profiles:seller_id(id,username,rep,trades)').eq('status','active').order('created_at',{ascending:false});
+  S.ads = data||[];
+  $('ads-count').textContent = `${S.ads.length} active listings`;
+}
+
+function filterAds() { S.market.search=$('mp-search').value.toLowerCase(); S.market.sort=$('mp-sort').value; renderAds(); }
+function setCat(cat) { S.market.cat=cat; buildCatPills(); filterAds(); }
+function buildCatPills() { $('cat-pills').innerHTML=CATS.map(c=>`<button class="pill${c===S.market.cat?' active':''}" onclick="setCat('${c}')">${c}</button>`).join(''); }
+
+function renderAds() {
+  let ads=[...S.ads];
+  if (S.market.search) ads=ads.filter(a=>a.title.toLowerCase().includes(S.market.search)||a.description?.toLowerCase().includes(S.market.search));
+  if (S.market.cat!=='All') ads=ads.filter(a=>a.category===S.market.cat);
+  if (S.market.sort==='price_asc') ads.sort((a,b)=>a.price-b.price);
+  else if (S.market.sort==='price_desc') ads.sort((a,b)=>b.price-a.price);
+  $('ads-count').textContent=`${ads.length} listing${ads.length!==1?'s':''} found`;
+  if (!ads.length) { $('ads-grid').innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="ei">📭</div><p>No listings found</p><p style="font-size:13px;margin-top:6px">Try different filters</p></div>`; return; }
+  $('ads-grid').innerHTML=ads.map(ad=>{
+    const isMine=ad.seller_id===S.profile?.id;
+    const s=ad.profiles;
+    return`<div class="ad-card" onclick="${isMine?'':` openTrade('${ad.id}')`}">
+      <div class="ad-img">
+        ${ad.image_url?`<img src="${ad.image_url}" alt="" onerror="this.parentNode.innerHTML='<div class=ad-img-ph>📦</div>'">`:` <div class="ad-img-ph">📦</div>`}
+        <div class="ad-badges">${badge(ad.type.toUpperCase(),ad.type==='sell'?'var(--green)':'var(--purple)')}${badge(ad.category,'var(--blue)')}</div>
+        ${isMine?`<div style="position:absolute;top:8px;right:8px">${badge('YOUR AD','var(--muted)')}</div>`:''}
+      </div>
+      <div class="ad-body">
+        <div class="ad-title">${ad.title}</div>
+        <div class="ad-desc">${ad.description||''}</div>
+        <div class="ad-price">${bsTag(11)}<span class="amt">${ad.price.toLocaleString()}</span><span class="ago">${timeAgo(ad.created_at)}</span></div>
+        <div class="ad-footer">
+          ${s?`<div class="ad-seller"><div class="avatar" style="width:22px;height:22px;font-size:9px;color:#fff;background:${ac(s.username)}">${s.username.slice(0,2).toUpperCase()}</div><span class="sname">${s.username}</span><span class="srep">★${s.rep||0}</span></div>`:'<div></div>'}
+          ${isMine?badge('Your listing','var(--muted)'):`<button class="btn-gold" style="padding:6px 14px;font-size:12px" onclick="event.stopPropagation();openTrade('${ad.id}')">Trade</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function previewImg() { const url=$('post-img').value.trim(); if(url){show('img-prev');$('img-prev-img').src=url;}else{hide('img-prev');} }
+
+async function submitAd() {
+  const title=$('post-title').value.trim(), desc=$('post-desc').value.trim(), price=parseInt($('post-price').value)||0;
+  if (!title) return toast('Please add a title.','e');
+  if (!desc) return toast('Please add a description.','e');
+  if (price<1) return toast('Please enter a valid price.','e');
+  const btn=document.querySelector('#pg-post .btn-gold'); btn.disabled=true; btn.textContent='Posting...';
+  const {error}=await sb.from('ads').insert({seller_id:S.profile.id,title,description:desc,image_url:$('post-img').value.trim()||null,price,type:$('post-type').value,category:$('post-category').value,status:'active'});
+  btn.disabled=false; btn.textContent='Post Listing';
+  if (error) { toast('Failed: '+error.message,'e'); return; }
+  toast('Listing posted! 🎉','s');
+  $('post-title').value='';$('post-desc').value='';$('post-img').value='';$('post-price').value='';hide('img-prev');
+  await loadAds(); goPage('marketplace');
+}
+
+// ── CHAT ────────────────────────────────────────────
+async function openTrade(adId) {
+  const ad=S.ads.find(a=>a.id===adId);
+  if (!ad||ad.seller_id===S.profile.id) return;
+  S.chat.adData=ad;
+  let {data:existing}=await sb.from('chats').select('*').eq('ad_id',adId).eq('buyer_id',S.profile.id).single();
+  if (existing) { S.chat.id=existing.id; S.chat.data=existing; }
+  else {
+    const {data:nc,error}=await sb.from('chats').insert({ad_id:adId,buyer_id:S.profile.id,seller_id:ad.seller_id,status:'open',middleman_invoked:false}).select().single();
+    if (error) { toast('Failed to open chat.','e'); return; }
+    S.chat.id=nc.id; S.chat.data=nc;
+    await sb.from('messages').insert({chat_id:nc.id,sender_id:null,content:`🏪 Trade chat opened for "${ad.title}". Stay safe — use a middleman for high-value items!`,is_system:true,system_type:'info'});
+  }
+  const otherId=S.profile.id===ad.seller_id?S.chat.data.buyer_id:ad.seller_id;
+  const {data:op}=await sb.from('profiles').select('*').eq('id',otherId).single();
+  S.chat.otherProfile=op;
+  const {data:msgs}=await sb.from('messages').select('*, profiles:sender_id(username)').eq('chat_id',S.chat.id).order('created_at',{ascending:true});
+  S.chat.msgs=msgs||[];
+  renderChatPage(); goPage('chat'); subscribeChat(S.chat.id);
+}
+
+function leaveChat() { unsubChat(); goPage('marketplace'); }
+
+function renderChatPage() {
+  const other=S.chat.otherProfile, ad=S.chat.adData, cd=S.chat.data, isClosed=cd?.status!=='open';
+  if (other) { setAvatar($('chat-av'),other.username,36); $('chat-other-name').textContent=other.username; $('chat-other-stat').textContent=`● Online · ${other.trades||0} trades · ★${other.rep||0}`; }
+  $('chat-mm-badge').innerHTML=cd?.middleman_invoked?badge('🛡️ MM Active','var(--gold)'):'';
+  const st=cd?.status||'open';
+  $('chat-status-badge').innerHTML=st!=='open'?badge(st.toUpperCase(),STATUS_COLORS[st]||'var(--blue)'):'';
+  if (ad) {
+    $('chat-ad-img-wrap').innerHTML=ad.image_url?`<img src="${ad.image_url}" style="width:100%;height:110px;object-fit:cover;display:block" alt="" onerror="this.style.opacity='.2'">`:`<div style="width:100%;height:110px;display:flex;align-items:center;justify-content:center;font-size:42px;opacity:.2">📦</div>`;
+    $('chat-ad-title').textContent=ad.title; $('chat-ad-price').textContent=ad.price.toLocaleString();
+    $('chat-ad-badges').innerHTML=badge(ad.type.toUpperCase(),ad.type==='sell'?'var(--green)':'var(--purple)')+' '+badge(ad.category,'var(--blue)');
+  }
+  $('chat-msgs').innerHTML=''; S.chat.msgs.forEach(m=>appendMsg(m)); scrollBottom();
+  renderChatActions();
+  isClosed?(hideEl($('chat-inp-area')),showEl($('chat-closed-note'))):(showEl($('chat-inp-area')),hideEl($('chat-closed-note')));
+  if (other) {
+    setAvatar($('chat-trader-av'),other.username,38);
+    $('chat-trader-name').textContent=other.username; $('chat-trader-trades').textContent=`${other.trades||0} trades completed`;
+    const rl=(other.rep||0)>=50?['🏆 Pro','var(--gold)']:(other.rep||0)>=10?['✅ Trusted','var(--green)']:['🆕 New','var(--muted)'];
+    $('chat-trader-stats').innerHTML=`<div class="tstat"><span class="tsl">Reputation</span><span style="color:var(--gold);font-weight:700">★ ${other.rep||0}</span></div><div class="tstat"><span class="tsl">Status</span>${badge(rl[0],rl[1])}</div>`;
+  }
+}
+
+function renderChatActions() {
+  const cd=S.chat.data, isClosed=cd?.status!=='open', mmActive=cd?.middleman_invoked, st=cd?.status||'open';
+  let html='';
+  if (isClosed) {
+    const sc={received:'var(--green)',scammed:'var(--red)',ghosted:'var(--muted)',disputed:'var(--orange)'};
+    html+=`<div class="trade-closed-badge" style="background:${sc[st]||'var(--blue)'}18;border:1px solid ${sc[st]||'var(--blue)'}44;color:${sc[st]||'var(--blue)'}">Trade is ${st.toUpperCase()}</div>`;
+    if (st==='scammed') html+=`<button class="abt disc" onclick="window.open('https://discord.gg/bloxxytrade','_blank')">💬 Discord Support</button>`;
+  } else {
+    if (!mmActive) html+=`<button class="abt mm" onclick="requestMiddlemanAction()">🛡️ Request Middleman</button>`;
+    else html+=`<div class="mm-active">✓ Middleman active in chat</div>`;
+    html+=`<button class="abt recv" onclick="setTradeStatus('received')">✅ Mark as Received</button>`;
+    html+=`<button class="abt scam" onclick="setTradeStatus('scammed')">🚨 Report Scam</button>`;
+    html+=`<button class="abt ghost" onclick="setTradeStatus('ghosted')">👻 Mark Ghosted</button>`;
+    html+=`<button class="abt disp" onclick="setTradeStatus('disputed')">⚖️ Open Dispute</button>`;
+  }
+  $('chat-action-btns').innerHTML=html;
+}
+
+function appendMsg(msg) {
+  const c=$('chat-msgs'); if (!c) return;
+  const el=document.createElement('div');
+  if (msg.is_system) {
+    const tc=msg.system_type==='warn'?' warn':msg.system_type==='ok'?' ok':msg.system_type==='bad'?' bad':'';
+    el.className=`msg-sys${tc}`; el.innerHTML=`<span>${msg.content}</span>`;
+  } else {
+    const isMe=msg.sender_id===S.profile?.id;
+    const sname=msg.profiles?.username||'MiddleMan_Bot';
+    const isMM=!msg.sender_id&&!msg.is_system;
+    el.className=`msg-row${isMe?' me':''}${isMM?' mm-msg':''}`;
+    el.innerHTML=`${!isMe?`<div class="avatar" style="width:28px;height:28px;font-size:11px;color:#fff;background:${ac(sname)}">${sname.slice(0,2).toUpperCase()}</div>`:''}
+    <div>${!isMe?`<div class="msg-sender">${sname}${isMM?' 🤖':''}</div>`:''}
+    <div class="msg-bubble">${msg.content}</div>
+    <div class="msg-time">${new Date(msg.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div>`;
+  }
+  c.appendChild(el);
+}
+
+function scrollBottom() { const c=$('chat-msgs'); if(c) c.scrollTop=c.scrollHeight; }
+
+async function sendChatMsg() {
+  const input=$('chat-input'), content=input.value.trim();
+  if (!content||S.chat.data?.status!=='open') return;
+  input.value='';
+  await sb.from('messages').insert({chat_id:S.chat.id,sender_id:S.profile.id,content,is_system:false});
+}
+
+async function requestMiddlemanAction() {
+  await sb.from('chats').update({middleman_invoked:true}).eq('id',S.chat.id);
+  S.chat.data.middleman_invoked=true;
+  await sb.from('messages').insert([
+    {chat_id:S.chat.id,sender_id:null,content:'🛡️ Middleman requested! A moderator will join shortly.',is_system:true,system_type:'warn'},
+    {chat_id:S.chat.id,sender_id:null,content:`👋 MiddleMan_Bot here!\n\n✅ Both parties — confirm the agreed trade details in this chat.\n⛔ Do NOT send items until I give the green light.\n📩 Once both confirm, I'll oversee the transfer.\n\nStay safe!`,is_system:false}
+  ]);
+  renderChatActions(); toast('Middleman requested! 🛡️','i');
+}
+
+async function setTradeStatus(status) {
+  const msgs={received:['✅ Trade marked as Received! Both parties earned B$50 and +1 rep.','ok'],scammed:['🚨 Scam reported! Join Discord immediately with your evidence and trade ID.','bad'],ghosted:['👻 Trade marked as Ghosted. User flagged for review.',''],disputed:['⚖️ Dispute opened. A moderator will review this shortly.','warn']};
+  await sb.from('chats').update({status}).eq('id',S.chat.id);
+  S.chat.data.status=status;
+  const [text,type]=msgs[status]||['Trade updated.',''];
+  await sb.from('messages').insert({chat_id:S.chat.id,sender_id:null,content:text,is_system:true,system_type:type});
+  if (status==='received') { await sb.rpc('complete_trade',{p_chat_id:S.chat.id}); await refreshProfile(); }
+  renderChatActions();
+  isClosed?null:(hideEl($('chat-inp-area')),showEl($('chat-closed-note')));
+  $('chat-status-badge').innerHTML=status!=='open'?badge(status.toUpperCase(),STATUS_COLORS[status]||'var(--blue)'):'';
+  if (status==='scammed') toast('Scam reported. Go to Discord! 🚨','e'); else toast(`Trade marked as ${status}.`,'i');
+}
+
+function subscribeChat(chatId) {
+  unsubChat();
+  S.chat.sub=sb.channel(`chat-${chatId}`).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`chat_id=eq.${chatId}`},async payload=>{
+    if (S.chat.msgs.find(m=>m.id===payload.new.id)) return;
+    let msg={...payload.new};
+    if (msg.sender_id) { const {data}=await sb.from('profiles').select('username').eq('id',msg.sender_id).single(); msg.profiles=data; }
+    S.chat.msgs.push(msg); appendMsg(msg); scrollBottom();
+  }).subscribe();
+}
+function unsubChat() { if(S.chat.sub){S.chat.sub.unsubscribe();S.chat.sub=null;} }
+
+// ── PROFILE ─────────────────────────────────────────
+async function renderProfile() {
+  if (!S.profile) return;
+  const p=S.profile;
+  const rl=(p.rep||0)>=50?['🏆 Pro Trader','var(--gold)']:(p.rep||0)>=10?['✅ Trusted','var(--green)']:['🆕 New Trader','var(--muted)'];
+  $('prof-hero').innerHTML=`<div class="avatar" style="width:72px;height:72px;background:${ac(p.username)};font-size:27px;color:#fff">${p.username.slice(0,2).toUpperCase()}</div>
+  <div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:5px"><h1 style="font-size:26px;font-weight:800;letter-spacing:-.5px">${p.username}</h1>${badge(rl[0],rl[1])}</div>
+  <p style="color:var(--muted);font-size:13px">Member since ${new Date(p.created_at).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</p></div>`;
+  $('prof-stats').innerHTML=`<div class="scard"><div class="slbl">B$ Balance</div><div class="sval" style="color:var(--gold)">${(p.balance||0).toLocaleString()}</div></div>
+  <div class="scard"><div class="slbl">Reputation</div><div class="sval" style="color:var(--green)">★ ${p.rep||0}</div></div>
+  <div class="scard"><div class="slbl">Trades Done</div><div class="sval" style="color:var(--blue)">${p.trades||0}</div></div>
+  <div class="scard" id="prof-listings-card"><div class="slbl">Listings</div><div class="sval" style="color:var(--purple)">—</div></div>`;
+  const {data:myAds}=await sb.from('ads').select('*').eq('seller_id',p.id).order('created_at',{ascending:false});
+  $('my-ads-title').textContent=`My Listings (${myAds?.length||0})`;
+  document.querySelector('#prof-listings-card .sval').textContent=myAds?.length||0;
+  $('my-ads-list').innerHTML=!myAds?.length?'<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No listings yet</p>':myAds.map(ad=>`<div class="lrow">${ad.image_url?`<img class="lthumb" src="${ad.image_url}" alt="" onerror="this.style.opacity='.2'">`:`<div class="lthumb">📦</div>`}<div class="linfo"><div class="lname">${ad.title}</div><div class="lprice">B$ ${ad.price.toLocaleString()}</div></div>${badge(ad.type.toUpperCase(),ad.type==='sell'?'var(--green)':'var(--purple)')}</div>`).join('');
+  const {data:myChats}=await sb.from('chats').select('*, ads(title,price)').or(`buyer_id.eq.${p.id},seller_id.eq.${p.id}`).order('created_at',{ascending:false});
+  $('my-trades-title').textContent=`Trade History (${myChats?.length||0})`;
+  const sc={received:'var(--green)',scammed:'var(--red)',ghosted:'var(--muted)',disputed:'var(--orange)',open:'var(--blue)'};
+  $('my-trades-list').innerHTML=!myChats?.length?'<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No trades yet</p>':myChats.map(c=>`<div class="trow"><div><div class="tname">${c.ads?.title||'Unknown Ad'}</div><div class="tmeta">${c.middleman_invoked?'MM used · ':''}${c.status}</div></div>${badge(c.status.toUpperCase(),sc[c.status]||'var(--blue)')}</div>`).join('');
+}
+
+// ── GAMBLE ───────────────────────────────────────────
+let gSpinning=false, gSide='heads';
+function switchGTab(tab,btn){document.querySelectorAll('.gtab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');['coinflip','dice','slots'].forEach(t=>{const el=$('gt-'+t);if(el)el.classList.toggle('hidden',t!==tab);});}
+function setBet(v){$('bet-coin').value=Math.min(v,S.profile?.balance||0);}
+function setBet2(v){$('bet-dice').value=Math.min(v,S.profile?.balance||0);}
+function setBet3(v){$('bet-slots').value=Math.min(v,S.profile?.balance||0);}
+function betHalf(){setBet(Math.floor((S.profile?.balance||0)/2));}function betHalf2(){setBet2(Math.floor((S.profile?.balance||0)/2));}function betHalf3(){setBet3(Math.floor((S.profile?.balance||0)/2));}
+function betMax(){setBet(S.profile?.balance||0);}function betMax2(){setBet2(S.profile?.balance||0);}function betMax3(){setBet3(S.profile?.balance||0);}
+function selectSide(side){gSide=side;$('sbtn-heads').classList.toggle('active',side==='heads');$('sbtn-tails').classList.toggle('active',side==='tails');}
+function addGH(type,won,amount){const h=$('gamble-history');const row=document.createElement('div');row.className=`hist-row ${won?'win':'lose'}`;row.innerHTML=`<div><div class="ht">${type}</div><div class="htime">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div><div class="hamt">${won?'+':'-'}B$${Math.abs(amount).toLocaleString()}</div>`;if(h.firstChild)h.insertBefore(row,h.firstChild);else h.appendChild(row);h.querySelectorAll('p').forEach(p=>p.remove());const rows=h.querySelectorAll('.hist-row');if(rows.length>12)rows[rows.length-1].remove();}
+
+async function playCoinFlip(){
+  if(gSpinning)return;const bet=parseInt($('bet-coin').value)||0;
+  if(bet<1)return toast('Enter a valid bet.','e');if(bet>(S.profile?.balance||0))return toast('Not enough B$.','e');
+  gSpinning=true;$('flip-btn').disabled=true;$('coin-result').innerHTML='';$('coin-display').className='coin-em coin-spin';
+  await updateBalance(-bet);await new Promise(r=>setTimeout(r,1400));
+  $('coin-display').className='coin-em';const out=Math.random()>.5?'heads':'tails';const won=out===gSide;
+  $('coin-display').textContent=out==='heads'?'😊':'🌕';if(won)await updateBalance(bet*2);
+  addGH('Coin Flip',won,won?bet:-bet);
+  $('coin-result').innerHTML=`<div class="game-res ${won?'win':'lose'}" style="margin-top:18px"><div class="ramt">${won?`+B$${bet.toLocaleString()} — WIN!`:`-B$${bet.toLocaleString()} — LOSE`}</div><div style="font-size:13px;color:var(--muted);margin-top:3px">Result: ${out}</div></div>`;
+  gSpinning=false;$('flip-btn').disabled=false;
+}
+
+async function playDice(){
+  if(gSpinning)return;const bet=parseInt($('bet-dice').value)||0;
+  if(bet<1)return toast('Enter a valid bet.','e');if(bet>(S.profile?.balance||0))return toast('Not enough B$.','e');
+  gSpinning=true;$('dice-btn').disabled=true;$('dice-result').innerHTML='';$('dice-display').className='dice-em dice-spin';
+  await updateBalance(-bet);await new Promise(r=>setTimeout(r,1000));
+  $('dice-display').className='dice-em';const roll=Math.floor(Math.random()*6)+1;
+  $('dice-display').textContent=['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1];const won=roll>=4;if(won)await updateBalance(bet*2);
+  addGH('Dice',won,won?bet:-bet);
+  $('dice-result').innerHTML=`<div class="game-res ${won?'win':'lose'}" style="margin-top:18px"><div class="ramt">Roll: ${roll} — ${won?`+B$${bet.toLocaleString()} WIN!`:`-B$${bet.toLocaleString()} LOSE`}</div></div>`;
+  gSpinning=false;$('dice-btn').disabled=false;
+}
+
+async function playSlots(){
+  if(gSpinning)return;const bet=parseInt($('bet-slots').value)||0;
+  if(bet<1)return toast('Enter a valid bet.','e');if(bet>(S.profile?.balance||0))return toast('Not enough B$.','e');
+  gSpinning=true;$('slots-btn').disabled=true;$('slots-result').innerHTML='';[0,1,2].forEach(i=>{const r=$('s'+i);if(r)r.className='sreel';});
+  await updateBalance(-bet);
+  const SY=['🍒','🍋','🍊','⭐','💎','🔔'];let n=0;
+  await new Promise(resolve=>{const iv=setInterval(()=>{[0,1,2].forEach(i=>{const r=$('s'+i);if(r)r.textContent=SY[~~(Math.random()*6)];});if(++n>16){clearInterval(iv);const f=[SY[~~(Math.random()*6)],SY[~~(Math.random()*6)],SY[~~(Math.random()*6)]];[0,1,2].forEach(i=>{const r=$('s'+i);if(r)r.textContent=f[i];});const won=f[0]===f[1]&&f[1]===f[2];const mult=f[0]==='💎'?10:f[0]==='⭐'?5:3;if(won){[0,1,2].forEach(i=>{const r=$('s'+i);if(r)r.classList.add('win');});}(async()=>{if(won)await updateBalance(bet*mult);addGH('Slots',won,won?bet*(mult-1):-bet);$('slots-result').innerHTML=`<div class="game-res ${won?'win':'lose'}" style="margin-top:18px"><div class="ramt">${won?`${f[0]}${f[0]}${f[0]} — ${mult}× WIN! +B$${(bet*(mult-1)).toLocaleString()}`:`-B$${bet.toLocaleString()} — No match`}</div></div>`;gSpinning=false;$('slots-btn').disabled=false;resolve();})();}},90);});
+}
+
+// ── FAQ ──────────────────────────────────────────────
+function buildFaq(){$('faq-list').innerHTML=FAQS.map((f,i)=>`<div class="faq-item" id="faq-${i}"><button class="faq-q" onclick="toggleFaq(${i})"><span>${f[0]}</span><span class="plus">+</span></button><div class="faq-a hidden">${f[1]}</div></div>`).join('');}
+function toggleFaq(i){const item=$('faq-'+i);const ans=item.querySelector('.faq-a');const wasOpen=item.classList.contains('open');document.querySelectorAll('.faq-item').forEach(el=>{el.classList.remove('open');el.querySelector('.faq-a').classList.add('hidden');});if(!wasOpen){item.classList.add('open');ans.classList.remove('hidden');}}
+</script>
+</body>
+</html>
