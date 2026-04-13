@@ -1,4 +1,6 @@
 {
-  "outputDirectory": ".",
-  "buildCommand": ""
+  "version": 2,
+  "routes": [
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
 }
