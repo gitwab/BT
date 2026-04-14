@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bloxxytrade</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#07090f;--panel:#0d1220;--card:#111827;--border:#1e2d45;--gold:#f0b429;--text:#dde4f0;--muted:#5a6a82;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--purple:#a78bfa;--orange:#f97316;--discord:#5865F2}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--panel)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+h1,h2,h3,h4{font-family:'Syne',sans-serif}
+.hidden{display:none!important}.page{display:none}.page.active{display:block}
+input,textarea,select{background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;width:100%;outline:none;transition:border-color .18s,box-shadow .18s}
+input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px #f0b42918}
+select option{background:var(--panel)}textarea{resize:vertical}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;border:none;border-radius:9px;padding:10px 20px;font-size:14px;font-weight:600;transition:all .15s}
+button:active{transform:scale(.97)}button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-gold{background:var(--gold);color:#000;box-shadow:0 0 14px #f0b42920}.btn-gold:hover:not(:disabled){background:#e6aa24}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-ghost:hover{background:var(--card);color:var(--text)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.4px}
+.container{max-width:1200px;margin:0 auto;padding:0 20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px}
+.label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:7px}
+.form-group{margin-bottom:16px}.sec-title{font-size:24px;font-weight:800;letter-spacing:-.5px}.sec-sub{color:var(--muted);font-size:14px;margin-top:4px}
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:14px}
+.spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading .logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;letter-spacing:-1px}
+#loading .logo-text .g{color:var(--gold)}
+#cfg-warning{position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.cfg-box{background:var(--card);border:2px solid var(--gold);border-radius:16px;padding:32px;max-width:480px;width:100%;text-align:center}
+.cfg-box h2{color:var(--gold);margin-bottom:12px}.cfg-box p{color:var(--muted);font-size:14px;line-height:1.7}
+.cfg-box code{background:var(--panel);border:1px solid var(--border);padding:3px 8px;border-radius:5px;font-size:12px;color:var(--text);display:block;margin:8px 0;text-align:left}
+#toasts{position:fixed;top:66px;right:16px;z-index:9000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:13px;min-width:220px;max-width:300px;animation:toastIn .25s ease}
+.toast.s{border-left:3px solid var(--green);color:var(--green)}.toast.e{border-left:3px solid var(--red);color:var(--red)}.toast.i{border-left:3px solid var(--gold);color:var(--gold)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden}
+#auth::before{content:'';position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(circle,#f0b42909,transparent 70%);pointer-events:none}
+.auth-box{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 24px 60px #0009}
+.auth-logo{text-align:center;margin-bottom:28px}.auth-logo h1{font-size:42px;letter-spacing:-2px;line-height:1}.auth-logo h1 .g{color:var(--gold)}
+.auth-logo p{color:var(--muted);font-size:11px;margin-top:6px;letter-spacing:.8px;text-transform:uppercase}
+.auth-tabs{display:flex;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:22px}
+.auth-tab{flex:1;padding:9px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-weight:500;font-size:14px;cursor:pointer;transition:all .18s;font-family:'DM Sans',sans-serif}
+.auth-tab.active{background:var(--card);color:var(--text);font-weight:600;border:1px solid var(--border)}
+.auth-err{background:#ef444418;border:1px solid #ef444444;color:var(--red);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+.bonus-note{text-align:center;font-size:12px;color:var(--muted);margin-top:8px}.bonus-note span{color:var(--gold);font-weight:700}
+#navbar{background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;padding:0 20px}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;height:56px;gap:6px}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-1px;cursor:pointer;flex-shrink:0;margin-right:8px}.nav-logo .g{color:var(--gold)}
+.nav-links{display:flex;gap:1px;flex:1}
+.nav-link{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:6px 10px;font-size:13px;font-weight:500;cursor:pointer;border-radius:5px 5px 0 0;transition:all .15s;font-family:'DM Sans',sans-serif;position:relative}
+.nav-link:hover{color:var(--text)}.nav-link.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:700}
+.notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:2px solid var(--panel)}
+.nav-right{display:flex;align-items:center;gap:7px;margin-left:auto;flex-shrink:0}
+.nav-bal{display:flex;align-items:center;gap:5px;background:#f0b42914;border:1px solid #f0b42933;border-radius:8px;padding:5px 10px;font-size:13px;font-weight:700;color:var(--gold)}
+.nav-bal .sym{font-family:'Syne',sans-serif;font-size:11px}
+.nav-user{display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:8px;transition:all .15s}
+.nav-user:hover{border-color:var(--gold)}.nav-user .uname{font-size:13px;font-weight:500;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Syne',sans-serif;flex-shrink:0}
+.admin-crown{font-size:9px;background:var(--gold);color:#000;border-radius:4px;padding:1px 5px;font-weight:800;letter-spacing:.5px;flex-shrink:0}
+#pg-marketplace{padding:26px 0}
+.mp-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+.mp-filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.mp-filters input{max-width:230px;flex:1;min-width:130px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 11px;border-radius:8px;font-size:12px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.pill.active{background:#f0b42914;border-color:#f0b42966;color:var(--gold);font-weight:700}.pill:hover:not(.active){border-color:#f0b42944;color:var(--text)}
+.ads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:15px}
+.ad-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all .2s;cursor:pointer}
+.ad-card:hover{border-color:#f0b42966;transform:translateY(-3px);box-shadow:0 8px 24px #0006}
+.ad-card.mine{cursor:default}.ad-card.mine:hover{transform:none;border-color:var(--border);box-shadow:none}
+.ad-img{height:162px;overflow:hidden;background:var(--panel);position:relative}
+.ad-img img{width:100%;height:100%;object-fit:cover;transition:transform .3s;display:block}
+.ad-card:not(.mine):hover .ad-img img{transform:scale(1.05)}
+.ad-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:44px;opacity:.2}
+.ad-badges{position:absolute;top:8px;left:8px;display:flex;gap:5px}
+.ad-body{padding:12px}
+.ad-title{font-size:14px;font-weight:700;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ad-desc{font-size:12px;color:var(--muted);line-height:1.5;height:36px;overflow:hidden;margin-bottom:9px}
+.ad-price{display:flex;align-items:center;gap:4px;margin-bottom:9px}
+.ad-price .sym{font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);font-size:11px}
+.ad-price .amt{font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);font-size:17px}
+.ad-price .ago{margin-left:auto;font-size:11px;color:var(--muted)}
+.ad-footer{display:flex;align-items:center;justify-content:space-between}
+.ad-seller{display:flex;align-items:center;gap:5px}.ad-seller .sname{font-size:11px;color:var(--muted)}.ad-seller .srep{font-size:10px;color:var(--gold)}
+.empty{text-align:center;padding:60px 0;color:var(--muted)}.empty .ei{font-size:44px;margin-bottom:10px}
+#pg-post{padding:26px 0}.post-card{padding:24px;max-width:680px}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
+.img-prev{border-radius:10px;overflow:hidden;height:145px;background:var(--panel);border:1px solid var(--border);margin-top:8px}
+.img-prev img{width:100%;height:100%;object-fit:cover;display:block}
+.price-wrap{position:relative}.price-wrap .psym{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gold);font-weight:800;font-family:'Syne',sans-serif;font-size:14px;pointer-events:none}
+.price-wrap input{padding-left:36px}
+.img-warn{font-size:11px;color:var(--orange);margin-top:5px}
+#pg-messages{padding:26px 0}
+.chat-list{display:flex;flex-direction:column;gap:8px}
+.chat-row{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;transition:all .18s}
+.chat-row:hover{border-color:#f0b42966;transform:translateX(3px)}
+.chat-row.mm-row{border-color:#a78bfa44;background:#a78bfa05}
+.cri{flex:1;min-width:0}.crt{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px}.crs{font-size:12px;color:var(--muted)}
+.crm{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+#pg-chat{padding:18px 0}
+.chat-layout{display:grid;grid-template-columns:1fr 205px;gap:13px;height:calc(100vh - 134px)}
+.chat-main{background:var(--card);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.chat-hdr{padding:10px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-shrink:0}
+.chi{flex:1}.chi .cn{font-weight:600;font-size:14px}.chi .cs{font-size:11px;color:var(--green)}
+.chat-msgs{flex:1;overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:8px}
+.msg-sys{text-align:center}.msg-sys span{display:inline-block;background:#3b82f618;border:1px solid #3b82f633;color:var(--blue);border-radius:20px;padding:5px 13px;font-size:12px;max-width:85%;line-height:1.4;white-space:pre-line}
+.msg-sys.warn span{background:#f0b42914;border-color:#f0b42933;color:var(--gold)}.msg-sys.ok span{background:#22c55e14;border-color:#22c55e33;color:var(--green)}.msg-sys.bad span{background:#ef444414;border-color:#ef444433;color:var(--red)}
+.msg-exp{font-size:10px;color:var(--muted);text-align:center;margin-top:2px}
+.msg-row{display:flex;gap:7px;align-items:flex-end}.msg-row.me{flex-direction:row-reverse}
+.msg-bubble{max-width:72%;padding:8px 12px;border-radius:12px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.msg-row:not(.me) .msg-bubble{background:var(--panel);border:1px solid var(--border);border-bottom-left-radius:3px}
+.msg-row.me .msg-bubble{background:#f0b42916;border:1px solid #f0b42940;border-bottom-right-radius:3px}
+.msg-row.mm-msg .msg-bubble{background:#a78bfa18;border:1px solid #a78bfa44}
+.msg-sender{font-size:10px;color:var(--muted);margin-bottom:2px}.msg-time{font-size:10px;color:var(--muted);margin-top:2px}.msg-row.me .msg-time{text-align:right}
+.chat-inp{padding:9px 13px;border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0}.chat-inp input{flex:1}
+.chat-closed-note{text-align:center;color:var(--muted);font-size:13px;padding:8px;flex-shrink:0;border-top:1px solid var(--border)}
+.chat-side{display:flex;flex-direction:column;gap:9px;overflow-y:auto}
+.cpanel{padding:12px;border-radius:13px;border:1px solid var(--border)}.clabel{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:8px}
+.abt{width:100%;text-align:left;padding:8px 11px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:5px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:filter .15s}
+.abt:last-child{margin-bottom:0}.abt:hover:not(:disabled){filter:brightness(1.25)}
+.abt.mm{background:#f0b42914;border:1px solid #f0b42933;color:var(--gold)}.abt.recv{background:#22c55e14;border:1px solid #22c55e44;color:var(--green)}
+.abt.scam{background:#ef444414;border:1px solid #ef444444;color:var(--red)}.abt.ghost{background:#5a6a8214;border:1px solid #5a6a8244;color:var(--muted)}
+.abt.disp{background:#f9731614;border:1px solid #f9731644;color:var(--orange)}.abt.disc{background:#5865F214;border:1px solid #5865F244;color:var(--discord)}
+.mm-active{background:#f0b42914;border:1px solid #f0b42933;border-radius:8px;padding:7px 11px;font-size:12px;color:var(--gold);margin-bottom:5px}
+.trade-closed-badge{border-radius:8px;padding:9px 11px;font-size:12px;text-align:center;margin-bottom:5px}
+.tstat{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}.tstat .tsl{color:var(--muted)}
+#pg-gamble{padding:26px 0}
+.gl-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.gamble-layout{display:grid;grid-template-columns:1fr 220px;gap:14px}
+.gtabs{display:flex;gap:7px;margin-bottom:16px}
+.gtab{padding:8px 16px;border-radius:9px;font-size:14px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s;font-family:'DM Sans',sans-serif}
+.gtab.active{background:#f0b42914;border-color:var(--gold);color:var(--gold);font-weight:700}
+.gamble-area{padding:24px;text-align:center;min-height:310px}
+.bet-presets{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;justify-content:center}
+.bpreset{padding:4px 10px;border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.bpreset:hover{border-color:var(--gold);color:var(--gold);background:#f0b42914}
+.bet-wrap{position:relative;max-width:210px;margin:0 auto 18px}.bet-wrap .psym{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gold);font-weight:800;font-family:'Syne',sans-serif;font-size:14px;pointer-events:none}
+.bet-wrap input{padding-left:36px;text-align:center}
+.game-display{margin-bottom:18px}
+.coin-em{font-size:74px;display:inline-block}.coin-spin{animation:cspin .18s linear infinite}
+@keyframes cspin{0%{transform:rotateY(0) scaleX(1)}50%{transform:rotateY(90deg) scaleX(.05)}100%{transform:rotateY(180deg) scaleX(1)}}
+.side-btns{display:flex;gap:10px;justify-content:center;margin-bottom:18px}
+.side-btn{padding:9px 26px;border-radius:9px;font-weight:700;font-size:14px;background:var(--panel);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.side-btn.active{background:var(--gold);border-color:var(--gold);color:#000}
+.dice-em{font-size:82px;display:inline-block}.dice-spin{animation:dspin .22s linear infinite}
+@keyframes dspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.slots-wrap{display:flex;justify-content:center;gap:9px;margin-bottom:18px}
+.sreel{width:76px;height:76px;background:var(--panel);border:2px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:32px;transition:border-color .3s}
+.sreel.win{border-color:var(--gold);box-shadow:0 0 14px #f0b42930}
+.game-res{margin-top:14px;padding:12px 18px;border-radius:10px}
+.game-res.win{background:#22c55e18;border:1px solid #22c55e44}.game-res.lose{background:#ef444418;border:1px solid #ef444444}
+.game-res .ramt{font-size:19px;font-weight:800;font-family:'Syne',sans-serif}
+.game-res.win .ramt{color:var(--green)}.game-res.lose .ramt{color:var(--red)}
+.hist-side{padding:14px;border-radius:13px;border:1px solid var(--border)}
+.hist-row{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--panel);border-radius:7px;font-size:12px;margin-bottom:5px}
+.hist-row .ht{font-weight:600}.hist-row .htime{color:var(--muted);font-size:10px}.hist-row .hamt{font-weight:700}
+.hist-row.win .hamt{color:var(--green)}.hist-row.lose .hamt{color:var(--red)}
+.gamble-note{padding-top:11px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);line-height:1.6;margin-top:11px}
+#pg-profile{padding:26px 0}
+.prof-hero{padding:24px;display:flex;align-items:center;gap:18px;margin-bottom:14px;flex-wrap:wrap}
+.prof-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.scard{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:15px;text-align:center}
+.slbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:5px}
+.sval{font-size:21px;font-weight:800;font-family:'Syne',sans-serif}
+.prof-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.ppanel{padding:17px}.ppanel h3{font-size:15px;font-weight:700;margin-bottom:12px}
+.lrow{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)}.lrow:last-child{border-bottom:none}
+.lthumb{width:40px;height:40px;border-radius:7px;object-fit:cover;background:var(--panel);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--muted)}
+.linfo{flex:1;min-width:0}.lname{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lprice{font-size:11px;color:var(--gold);font-weight:600;margin-top:1px}
+.trow{display:flex;align-items:center;justify-content:space-between;padding:8px 7px;border-bottom:1px solid var(--border);gap:7px;cursor:pointer;transition:background .15s;border-radius:6px}
+.trow:hover{background:var(--panel)}.trow:last-child{border-bottom:none}
+.tname{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.tmeta{font-size:11px;color:var(--muted);margin-top:1px}
+.topen{font-size:11px;color:var(--gold);flex-shrink:0}
+#pg-support{padding:26px 0}
+.disc-banner{background:#5865F214;border:1px solid #5865F233;border-radius:14px;padding:20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.disc-banner h2{font-size:18px;font-weight:700;margin-bottom:4px}.disc-banner p{color:var(--muted);font-size:14px;line-height:1.6}
+.supp-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
+.sqcard{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:15px;text-align:center;transition:border-color .2s}
+.sqcard:hover{border-color:#f0b42944}.sqcard .si{font-size:24px;margin-bottom:7px}.sqcard h4{font-size:13px;margin-bottom:3px}.sqcard p{font-size:12px;color:var(--muted)}
+.faq-item{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:7px;overflow:hidden;transition:border-color .2s}
+.faq-item.open{border-color:#f0b42944}
+.faq-q{width:100%;background:transparent;border:none;color:var(--text);padding:12px 16px;text-align:left;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.faq-q .plus{color:var(--gold);font-size:18px;transition:transform .2s;flex-shrink:0}.faq-item.open .faq-q .plus{transform:rotate(45deg)}
+.faq-a{padding:0 16px 13px;color:var(--muted);font-size:14px;line-height:1.7}
+.supp-footer{margin-top:22px;padding:15px;background:var(--panel);border:1px solid var(--border);border-radius:11px;text-align:center;font-size:13px;color:var(--muted)}
+.supp-footer a{color:var(--gold);font-weight:600;cursor:pointer}
+@media(max-width:720px){.chat-layout{grid-template-columns:1fr}.chat-side{display:none}.gamble-layout{grid-template-columns:1fr}.prof-stats{grid-template-columns:repeat(2,1fr)}.prof-grid{grid-template-columns:1fr}.fg2{grid-template-columns:1fr}.supp-quick{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="loading"><div class="logo-text"><span class="g">Bloxy</span>trade</div><div class="spinner"></div></div>
+<div id="cfg-warning" class="hidden"><div class="cfg-box"><h2>Setup Required</h2><p>Add your Supabase credentials in index.html:</p><code>const SUPABASE_URL = 'https://xyz.supabase.co';</code><code>const SUPABASE_ANON = 'your-anon-key';</code><p style="margin-top:12px">Then run update.sql in your Supabase SQL Editor.</p></div></div>
+<div id="toasts"></div>
+<div id="auth" class="hidden">
+  <div>
+    <div class="auth-logo"><h1><span class="g">Bloxy</span>trade</h1><p>The #1 Roblox Trading Marketplace</p><div style="display:flex;gap:12px;justify-content:center;margin-top:10px;flex-wrap:wrap"><span style="font-size:11px;color:var(--muted)">🔒 Middleman Protection</span><span style="font-size:11px;color:var(--muted)">⚡ Real-time Chat</span><span style="font-size:11px;color:var(--muted)">🛡️ Scam Shield</span></div></div>
+    <div class="auth-box">
+      <div class="auth-tabs"><button class="auth-tab active" onclick="switchAuthTab('login')">Log In</button><button class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</button></div>
+      <div id="auth-err" class="auth-err hidden"></div>
+      <div class="form-group"><label class="label">Username</label><input id="auth-username" type="text" placeholder="Your username" onkeydown="if(event.key==='Enter')doAuth()"></div>
+      <div class="form-group"><label class="label">Password</label><input id="auth-password" type="password" placeholder="Your password" onkeydown="if(event.key==='Enter')doAuth()"></div>
+      <button id="auth-btn" class="btn-gold" style="width:100%;padding:12px" onclick="doAuth()">Log In</button>
+      <p id="signup-note" class="bonus-note hidden">🎁 Get <span>B$100</span> welcome bonus!</p>
+    </div>
+    <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted)">Scammed? Join our <span style="color:var(--discord);cursor:pointer;font-weight:600" onclick="window.open('https://discord.gg/7MbtXspabT','_blank')">Discord Support</span></p>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <nav id="navbar">
+    <div class="nav-inner">
+      <div class="nav-logo" onclick="goPage('marketplace')"><span class="g">Bloxy</span>trade</div>
+      <div class="nav-links">
+        <button class="nav-link active" data-page="marketplace" onclick="goPage('marketplace')">Market</button>
+        <button class="nav-link" data-page="messages" onclick="goPage('messages')">Messages<span class="notif-dot hidden" id="msg-notif"></span></button>
+        <button class="nav-link" data-page="gamble" onclick="goPage('gamble')">🎰 Casino</button>
+        <button class="nav-link" data-page="profile" onclick="goPage('profile')">Profile</button>
+        <button class="nav-link" data-page="support" onclick="goPage('support')">Support</button>
+      </div>
+      <div class="nav-right">
+        <div class="nav-bal"><span class="sym">B$</span><span id="nav-balance">0</span></div>
+        <div class="nav-user" onclick="goPage('profile')">
+          <div id="nav-avatar" class="avatar" style="width:27px;height:27px;font-size:10px;color:#fff"></div>
+          <span class="uname" id="nav-username"></span>
+          <span id="nav-crown" class="admin-crown hidden">ADMIN</span>
+        </div>
+        <button class="btn-ghost" style="padding:6px 10px;font-size:12px" onclick="doSignOut()">Out</button>
+      </div>
+    </div>
+  </nav>
+  <div id="pg-marketplace" class="page active"><div class="container">
+    <div class="mp-hdr"><div><div class="sec-title">Marketplace</div><div class="sec-sub" id="ads-count">Loading...</div></div><button class="btn-gold" onclick="goPage('post')">+ Post Ad</button></div>
+    <div class="mp-filters"><input id="mp-search" type="text" placeholder="🔍  Search listings..." oninput="filterAds()"><div class="pills" id="cat-pills"></div><select id="mp-sort" style="width:160px" onchange="filterAds()"><option value="newest">Newest First</option><option value="price_asc">Price: Low → High</option><option value="price_desc">Price: High → Low</option></select></div>
+    <div class="ads-grid" id="ads-grid"></div>
+  </div></div>
+  <div id="pg-post" class="page"><div class="container">
+    <button class="btn-ghost" style="margin-bottom:14px;padding:7px 13px;font-size:13px" onclick="goPage('marketplace')">← Back</button>
+    <div class="sec-title" style="margin-bottom:3px">Post a Trade Ad</div><div class="sec-sub" style="margin-bottom:18px">Fill in your listing details</div>
+    <div class="card post-card">
+      <div class="fg2">
+        <div class="form-group" style="margin:0"><label class="label">Type</label><select id="post-type"><option value="sell">Selling for B$</option><option value="trade">Looking to Trade</option></select></div>
+        <div class="form-group" style="margin:0"><label class="label">Category</label><select id="post-category"><option>Limiteds</option><option>Accounts</option><option>Robux</option></select></div>
+      </div>
+      <div class="form-group"><label class="label">Title</label><input id="post-title" placeholder="e.g. Dominus Empyreus — Excellent Condition"></div>
+      <div class="form-group"><label class="label">Description</label><textarea id="post-desc" rows="4" placeholder="Describe your item, condition, delivery method..."></textarea></div>
+      <div class="form-group">
+        <label class="label">Image URL <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(PNG/JPG/WEBP only — no GIFs)</span></label>
+        <input id="post-img" placeholder="https://i.imgur.com/xyz.png" oninput="previewImg()">
+        <div class="img-warn hidden" id="img-warn">⚠️ GIFs are not allowed. Use a static image (PNG, JPG, WEBP).</div>
+        <div id="img-prev" class="img-prev hidden"><img id="img-prev-img" src="" alt="" onerror="this.style.opacity='.15'"></div>
+      </div>
+      <div class="form-group"><label class="label">Price (B$)</label><div class="price-wrap"><span class="psym">B$</span><input id="post-price" type="number" min="1" placeholder="0"></div></div>
+      <button class="btn-gold" style="width:100%;padding:12px;font-size:15px" onclick="submitAd()">Post Listing</button>
+    </div>
+  </div></div>
+  <div id="pg-messages" class="page"><div class="container">
+    <div style="margin-bottom:20px"><div class="sec-title">Messages</div><div class="sec-sub" id="msg-count">Your trade conversations</div></div>
+    <div id="chat-list-wrap"><div class="empty"><div class="ei">💬</div><p>No conversations yet</p><p style="font-size:13px;margin-top:5px">Start a trade from the marketplace</p></div></div>
+  </div></div>
+  <div id="pg-chat" class="page"><div class="container">
+    <button class="btn-ghost" style="margin-bottom:11px;padding:6px 13px;font-size:13px" onclick="leaveChat()">← Back</button>
+    <div class="chat-layout">
+      <div class="chat-main">
+        <div class="chat-hdr">
+          <div class="avatar" id="chat-av" style="width:32px;height:32px;font-size:12px;color:#fff"></div>
+          <div class="chi"><div class="cn" id="chat-other-name">Loading...</div><div class="cs" id="chat-other-stat">● Online</div></div>
+          <div id="chat-mm-badge"></div><div id="chat-status-badge"></div>
+        </div>
+        <div class="chat-msgs" id="chat-msgs"></div>
+        <div id="chat-inp-area" class="chat-inp"><input id="chat-input" placeholder="Type a message… (Enter to send)" onkeydown="if(event.key==='Enter')sendChatMsg()"><button class="btn-gold" style="flex-shrink:0;padding:0 15px" onclick="sendChatMsg()">Send</button></div>
+        <div id="chat-closed-note" class="chat-closed-note hidden">This trade is closed</div>
+      </div>
+      <div class="chat-side">
+        <div class="cpanel card" id="chat-ad-panel" style="padding:0;overflow:hidden">
+          <div id="chat-ad-img-wrap" style="height:95px;overflow:hidden;background:var(--panel)"></div>
+          <div style="padding:12px"><div style="font-size:13px;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="chat-ad-title"></div><div style="display:flex;align-items:center;gap:4px;margin:4px 0"><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);font-size:11px">B$</span><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);font-size:15px" id="chat-ad-price"></span></div><div id="chat-ad-badges" style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap"></div></div>
+        </div>
+        <div class="cpanel card"><div class="clabel">Trade Actions</div><div id="chat-action-btns"></div></div>
+        <div class="cpanel card">
+          <div class="clabel">Trader Info</div>
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px"><div class="avatar" id="chat-trader-av" style="width:34px;height:34px;font-size:12px;color:#fff"></div><div><div style="font-weight:700;font-size:13px" id="chat-trader-name"></div><div style="font-size:11px;color:var(--muted)" id="chat-trader-trades"></div></div></div>
+          <div id="chat-trader-stats"></div>
+        </div>
+        <div class="cpanel" style="background:#3b82f60d;border:1px solid #3b82f620;border-radius:12px"><div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:3px">🔒 Safety Tips</div><div style="font-size:11px;color:var(--muted);line-height:1.6">Use middleman for big trades. Never send items before approval. Report scammers on Discord.</div></div>
+      </div>
+    </div>
+  </div></div>
+  <div id="pg-gamble" class="page"><div class="container">
+    <div class="gl-hdr"><div><div class="sec-title">B$ Casino</div><div class="sec-sub">Earned through successful trades</div></div><div class="nav-bal" style="padding:9px 16px"><span class="sym">B$</span><span id="gamble-balance" style="font-size:19px">0</span></div></div>
+    <div class="gamble-layout">
+      <div>
+        <div class="gtabs"><button class="gtab active" onclick="switchGTab('coinflip',this)">🪙 Coin Flip</button><button class="gtab" onclick="switchGTab('dice',this)">🎲 Dice</button><button class="gtab" onclick="switchGTab('slots',this)">🎰 Slots</button></div>
+        <div id="gt-coinflip" class="card gamble-area">
+          <div class="bet-presets"><button class="bpreset" onclick="setBet(50)">50</button><button class="bpreset" onclick="setBet(100)">100</button><button class="bpreset" onclick="setBet(250)">250</button><button class="bpreset" onclick="setBet(500)">500</button><button class="bpreset" onclick="setBet(1000)">1k</button><button class="bpreset" onclick="betH()">½</button><button class="bpreset" onclick="betM()">Max</button></div>
+          <div class="bet-wrap"><span class="psym">B$</span><input id="bet-coin" type="number" min="1" value="50"></div>
+          <div class="game-display"><div class="coin-em" id="coin-display">🪙</div></div>
+          <div class="side-btns"><button class="side-btn active" id="sbtn-heads" onclick="selectSide('heads')">Heads</button><button class="side-btn" id="sbtn-tails" onclick="selectSide('tails')">Tails</button></div>
+          <button class="btn-gold" id="flip-btn" onclick="playCoinFlip()" style="padding:9px 38px;font-size:14px">Flip Coin</button><div id="coin-result"></div>
+        </div>
+        <div id="gt-dice" class="card gamble-area hidden">
+          <div class="bet-presets"><button class="bpreset" onclick="setBet2(50)">50</button><button class="bpreset" onclick="setBet2(100)">100</button><button class="bpreset" onclick="setBet2(250)">250</button><button class="bpreset" onclick="setBet2(500)">500</button><button class="bpreset" onclick="setBet2(1000)">1k</button><button class="bpreset" onclick="betH2()">½</button><button class="bpreset" onclick="betM2()">Max</button></div>
+          <div class="bet-wrap"><span class="psym">B$</span><input id="bet-dice" type="number" min="1" value="50"></div>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Roll 4, 5 or 6 to win — 50% chance, 2× payout</p>
+          <div class="game-display"><div class="dice-em" id="dice-display">🎲</div></div>
+          <button class="btn-gold" id="dice-btn" onclick="playDice()" style="padding:9px 38px;font-size:14px">Roll Dice</button><div id="dice-result"></div>
+        </div>
+        <div id="gt-slots" class="card gamble-area hidden">
+          <div class="bet-presets"><button class="bpreset" onclick="setBet3(50)">50</button><button class="bpreset" onclick="setBet3(100)">100</button><button class="bpreset" onclick="setBet3(250)">250</button><button class="bpreset" onclick="setBet3(500)">500</button><button class="bpreset" onclick="setBet3(1000)">1k</button><button class="bpreset" onclick="betH3()">½</button><button class="bpreset" onclick="betM3()">Max</button></div>
+          <div class="bet-wrap"><span class="psym">B$</span><input id="bet-slots" type="number" min="1" value="50"></div>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:13px">Match 3 to win — 💎💎💎 = 10× jackpot!</p>
+          <div class="slots-wrap"><div class="sreel" id="s0">🎰</div><div class="sreel" id="s1">🎰</div><div class="sreel" id="s2">🎰</div></div>
+          <button class="btn-gold" id="slots-btn" onclick="playSlots()" style="padding:9px 38px;font-size:14px">Spin!</button><div id="slots-result"></div>
+        </div>
+      </div>
+      <div class="hist-side card"><div class="clabel">Bet History</div><div id="gamble-history"><p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">No bets yet</p></div><div class="gamble-note">⚠️ Gamble responsibly. B$ has no real-world value.</div></div>
+    </div>
+  </div></div>
+  <div id="pg-profile" class="page"><div class="container">
+    <div class="card prof-hero" id="prof-hero"></div>
+    <div class="prof-stats" id="prof-stats"></div>
+    <div class="prof-grid">
+      <div class="card ppanel"><h3 id="my-ads-title">My Listings (0)</h3><div id="my-ads-list"><p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">No listings yet</p></div></div>
+      <div class="card ppanel"><h3 id="my-trades-title">Trade History (0)</h3><div id="my-trades-list"><p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">No trades yet</p></div></div>
+    </div>
+  </div></div>
+  <div id="pg-support" class="page"><div class="container">
+    <div class="sec-title" style="margin-bottom:3px">Support Center</div><div class="sec-sub" style="margin-bottom:20px">Help with trades, scams and disputes</div>
+    <div class="disc-banner"><div style="font-size:40px;flex-shrink:0">💬</div><div style="flex:1"><h2>Got Scammed? Contact Us on Discord</h2><p>Our mod team is online 24/7. Bring screenshots, trade ID and description.</p></div><button class="btn-gold" style="flex-shrink:0;padding:9px 16px" onclick="window.open('https://discord.gg/7MbtXspabT','_blank')">Join Discord</button></div>
+    <div class="supp-quick"><div class="sqcard"><div class="si">🚨</div><h4>Report a Scam</h4><p>Submit evidence via Discord</p></div><div class="sqcard"><div class="si">🛡️</div><h4>Request Middleman</h4><p>In any active trade chat</p></div><div class="sqcard"><div class="si">⚖️</div><h4>Open a Dispute</h4><p>Mod-reviewed resolution</p></div></div>
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:12px">FAQ</h2>
+    <div id="faq-list"></div>
+    <div class="supp-footer">Need help? <a><span class="__cf_email__" data-cfemail="cbb8bebbbba4b9bf8ba9a7a4b3b3b2bfb9aaafaee5acac">[email&#160;protected]</span></a> or <a onclick="window.open('https://discord.gg/7MbtXspabT','_blank')">Discord</a></div>
+  </div></div>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const SUPABASE_URL='https://ubxwrwrbsqvdkcxqhpvf.supabase.co';
+const SUPABASE_ANON='sb_publishable_aA-QAUNUX_xUajumOccGUQ_dfw2PMhZ';
+const ADMIN='kry';
+const CATS=['All','Limiteds','Accounts','Robux'];
+const FAQS=[['How do I earn B$?','You earn B$50 per completed trade (both parties). You get B$100 on signup.'],['What is the Middleman system?','In any trade chat, click "Request Middleman". Admin kry gets pinged and will join to oversee your trade.'],['I got scammed. What do I do?','Click "Report Scam" in the trade chat, then join our Discord immediately with screenshots and trade ID.'],['Can B$ be real money?','No. B$ is virtual and only used for Casino games.'],['How do I build reputation?','Each completed trade earns +1 rep. At 10 rep = Trusted, at 50 = Pro Trader.'],['Do messages expire?','Yes. Chat messages auto-delete after 24 hours to keep things clean.'],['Someone is ghosting me?','Click "Mark Ghosted" in trade chat. User gets flagged. Report on Discord with proof.']];
+const AC=['#7c3aed','#2563eb','#059669','#b45309','#db2777','#0891b2','#dc2626','#0d9488'];
+const SC={open:null,received:'var(--green)',scammed:'var(--red)',ghosted:'var(--muted)',disputed:'var(--orange)'};
+const GIF=/\.(gif)($|\?)|giphy\.com|tenor\.com|gifer\.com/i;
+let sb,S={profile:null,ads:[],chat:{id:null,data:null,msgs:[],adData:null,otherProfile:null,sub:null},market:{search:'',cat:'All',sort:'newest'}};
+async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+function genTok(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36);}
+window.addEventListener('DOMContentLoaded',async()=>{
+  if(SUPABASE_URL==='YOUR_SUPABASE_URL'){hide('loading');show('cfg-warning');return;}
+  try{sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);}catch(e){hide('loading');show('cfg-warning');return;}
+  buildFaq();buildCatPills();
+  const tok=localStorage.getItem('bxt');
+  if(tok){const{data}=await sb.from('profiles').select('*').eq('session_token',tok).single();if(data){S.profile=data;await showApp();hide('loading');return;}localStorage.removeItem('bxt');}
+  hide('loading');show('auth');
+});
+const $=id=>document.getElementById(id);
+const show=id=>$(id)?.classList.remove('hidden');
+const hide=id=>$(id)?.classList.add('hidden');
+const showEl=el=>el?.classList.remove('hidden');
+const hideEl=el=>el?.classList.add('hidden');
+const isAdmin=()=>S.profile?.username===ADMIN;
+const is24h=ts=>Date.now()-new Date(ts).getTime()>86400000;
+function toast(msg,t='i'){const el=document.createElement('div');el.className=`toast ${t}`;el.textContent=msg;$('toasts').appendChild(el);setTimeout(()=>el.remove(),3600);}
+function ac(u){return AC[(u?.charCodeAt(0)||0)%AC.length];}
+function av(el,u,sz=36){if(!el)return;el.style.background=ac(u);el.style.width=sz+'px';el.style.height=sz+'px';el.style.fontSize=Math.round(sz*.38)+'px';el.style.color='#fff';el.textContent=(u||'?').slice(0,2).toUpperCase();}
+function ago(ts){if(!ts)return'';const d=Date.now()-new Date(ts).getTime();if(d<3600000)return Math.floor(d/60000)+'m ago';if(d<86400000)return Math.floor(d/3600000)+'h ago';return Math.floor(d/86400000)+'d ago';}
+function ft(ts){return new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+function bdg(t,c){return`<span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}44">${t}</span>`;}
+function bsT(sz=12){return`<span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);font-size:${sz}px">B$</span>`;}
+let authMode='login';
+function switchAuthTab(m){authMode=m;document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&m==='login')||(i===1&&m==='signup')));$('auth-btn').textContent=m==='login'?'Log In':'Create Account';m==='signup'?show('signup-note'):hide('signup-note');hide('auth-err');}
+function showAE(msg){const el=$('auth-err');el.textContent=msg;showEl(el);}
+async function doAuth(){
+  const u=$('auth-username').value.trim(),p=$('auth-password').value;
+  if(!u||!p)return showAE('Please fill in all fields.');
+  if(!/^[a-zA-Z0-9_]{3,20}$/.test(u))return showAE('Username: 3-20 chars, letters/numbers/_ only.');
+  if(p.length<6)return showAE('Password must be at least 6 characters.');
+  $('auth-btn').textContent='...';$('auth-btn').disabled=true;hide('auth-err');
+  try{
+    const hash=await sha256(p),tok=genTok();
+    if(authMode==='signup'){
+      const{data:ex}=await sb.from('profiles').select('id').eq('username',u).single();
+      if(ex){showAE('Username already taken.');$('auth-btn').textContent='Create Account';$('auth-btn').disabled=false;return;}
+      const{data:nu,error}=await sb.from('profiles').insert({username:u,password_hash:hash,session_token:tok,balance:100}).select().single();
+      if(error)throw error;S.profile=nu;
+    }else{
+      const{data:usr}=await sb.from('profiles').select('*').eq('username',u).eq('password_hash',hash).single();
+      if(!usr){showAE('Wrong username or password.');$('auth-btn').textContent='Log In';$('auth-btn').disabled=false;return;}
+      await sb.from('profiles').update({session_token:tok}).eq('id',usr.id);S.profile={...usr,session_token:tok};
+    }
+    localStorage.setItem('bxt',tok);await showApp();
+  }catch(e){showAE(e.message||'Something went wrong.');$('auth-btn').textContent=authMode==='login'?'Log In':'Create Account';$('auth-btn').disabled=false;}
+}
+function doSignOut(){unsubChat();localStorage.removeItem('bxt');S.profile=null;hide('app');show('auth');$('auth-btn').textContent='Log In';$('auth-btn').disabled=false;}
+async function showApp(){hide('auth');show('app');updateNav();await loadAds();renderAds();loadMsgBadge();goPage('marketplace');}
+function goPage(name){
+  if(name!=='chat')unsubChat();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.toggle('active',l.dataset.page===name));
+  $('pg-'+name)?.classList.add('active');
+  if(name==='profile')renderProfile();
+  if(name==='gamble')$('gamble-balance').textContent=(S.profile?.balance||0).toLocaleString();
+  if(name==='messages')renderMessages();
+}
+function updateNav(){
+  if(!S.profile)return;
+  $('nav-balance').textContent=(S.profile.balance||0).toLocaleString();
+  $('nav-username').textContent=S.profile.username;
+  av($('nav-avatar'),S.profile.username,27);
+  isAdmin()?showEl($('nav-crown')):hideEl($('nav-crown'));
+}
+async function refreshProfile(){
+  if(!S.profile)return;
+  const{data}=await sb.from('profiles').select('*').eq('id',S.profile.id).single();
+  if(data){S.profile=data;updateNav();if($('gamble-balance'))$('gamble-balance').textContent=(data.balance||0).toLocaleString();}
+}
+async function updateBalance(delta){
+  if(!S.profile)return;
+  const nb=Math.max(0,(S.profile.balance||0)+delta);
+  await sb.from('profiles').update({balance:nb}).eq('id',S.profile.id);
+  S.profile.balance=nb;updateNav();if($('gamble-balance'))$('gamble-balance').textContent=nb.toLocaleString();
+}
+async function loadAds(){
+  const{data}=await sb.from('ads').select('*,profiles:seller_id(id,username,rep,trades)').eq('status','active').order('created_at',{ascending:false});
+  S.ads=data||[];$('ads-count').textContent=`${S.ads.length} active listing${S.ads.length!==1?'s':''}`;
+}
+function filterAds(){S.market.search=$('mp-search').value.toLowerCase();S.market.sort=$('mp-sort').value;renderAds();}
+function setCat(c){S.market.cat=c;buildCatPills();filterAds();}
+function buildCatPills(){$('cat-pills').innerHTML=CATS.map(c=>`<button class="pill${c===S.market.cat?' active':''}" onclick="setCat('${c}')">${c}</button>`).join('');}
+function renderAds(){
+  let ads=[...S.ads];
+  if(S.market.search)ads=ads.filter(a=>a.title.toLowerCase().includes(S.market.search)||a.description?.toLowerCase().includes(S.market.search));
+  if(S.market.cat!=='All')ads=ads.filter(a=>a.category===S.market.cat);
+  if(S.market.sort==='price_asc')ads.sort((a,b)=>a.price-b.price);else if(S.market.sort==='price_desc')ads.sort((a,b)=>b.price-a.price);
+  $('ads-count').textContent=`${ads.length} listing${ads.length!==1?'s':''} found`;
+  if(!ads.length){$('ads-grid').innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="ei">📭</div><p>No listings found</p></div>`;return;}
+  $('ads-grid').innerHTML=ads.map(ad=>{
+    const isMine=ad.seller_id===S.profile?.id,s=ad.profiles;
+    return`<div class="ad-card${isMine?' mine':''}" onclick="${isMine?'':` openTrade('${ad.id}')`}">
+      <div class="ad-img">
+        ${ad.image_url?`<img src="${ad.image_url}" alt="" onerror="this.parentNode.innerHTML='<div class=ad-img-ph>📦</div>'">`:`<div class="ad-img-ph">📦</div>`}
+        <div class="ad-badges">${bdg(ad.type.toUpperCase(),ad.type==='sell'?'var(--green)':'var(--purple)')}${bdg(ad.category,'var(--blue)')}</div>
+        ${isMine?`<div style="position:absolute;top:8px;right:8px">${bdg('YOURS','var(--muted)')}</div>`:''}
+      </div>
+      <div class="ad-body">
+        <div class="ad-title">${ad.title}</div>
+        <div class="ad-desc">${ad.description||''}</div>
+        <div class="ad-price">${bsT(11)}<span class="amt">${ad.price.toLocaleString()}</span><span class="ago">${ago(ad.created_at)}</span></div>
+        <div class="ad-footer">
+          ${s?`<div class="ad-seller"><div class="avatar" style="width:19px;height:19px;font-size:7px;color:#fff;background:${ac(s.username)}">${s.username.slice(0,2).toUpperCase()}</div><span class="sname">${s.username}</span><span class="srep">★${s.rep||0}</span></div>`:'<div></div>'}
+          ${isMine?bdg('Your listing','var(--muted)'):`<button class="btn-gold" style="padding:5px 12px;font-size:12px" onclick="event.stopPropagation();openTrade('${ad.id}')">Trade</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function previewImg(){
+  const url=$('post-img').value.trim(),warn=$('img-warn');
+  if(!url){hide('img-prev');hideEl(warn);return;}
+  if(GIF.test(url)){showEl(warn);hide('img-prev');return;}
+  hideEl(warn);show('img-prev');$('img-prev-img').src=url;
+}
+async function submitAd(){
+  const title=$('post-title').value.trim(),desc=$('post-desc').value.trim(),price=parseInt($('post-price').value)||0,img=$('post-img').value.trim();
+  if(!title)return toast('Please add a title.','e');
+  if(!desc)return toast('Please add a description.','e');
+  if(price<1)return toast('Please enter a valid price.','e');
+  if(img&&GIF.test(img))return toast('GIFs not allowed. Use PNG/JPG/WEBP.','e');
+  const btn=document.querySelector('#pg-post .btn-gold');btn.disabled=true;btn.textContent='Posting...';
+  const{error}=await sb.from('ads').insert({seller_id:S.profile.id,title,description:desc,image_url:img||null,price,type:$('post-type').value,category:$('post-category').value,status:'active'});
+  btn.disabled=false;btn.textContent='Post Listing';
+  if(error){toast('Failed: '+error.message,'e');return;}
+  toast('Listing posted! 🎉','s');
+  $('post-title').value='';$('post-desc').value='';$('post-img').value='';$('post-price').value='';hide('img-prev');
+  await loadAds();goPage('marketplace');
+}
+async function loadMsgBadge(){
+  if(!S.profile)return;
+  let q=sb.from('chats').select('id',{count:'exact',head:true});
+  if(isAdmin())q=q.or(`buyer_id.eq.${S.profile.id},seller_id.eq.${S.profile.id},middleman_id.eq.${S.profile.id}`);
+  else q=q.or(`buyer_id.eq.${S.profile.id},seller_id.eq.${S.profile.id}`);
+  const{count}=await q;
+  if(count>0)showEl($('msg-notif'));
+}
+async function renderMessages(){
+  $('chat-list-wrap').innerHTML=`<div class="empty"><div class="ei" style="font-size:24px">⏳</div><p>Loading...</p></div>`;
+  let q=sb.from('chats').select('*,ads(title,price,type),buyer:buyer_id(username),seller:seller_id(username)');
+  if(isAdmin())q=q.or(`buyer_id.eq.${S.profile.id},seller_id.eq.${S.profile.id},middleman_id.eq.${S.profile.id}`);
+  else q=q.or(`buyer_id.eq.${S.profile.id},seller_id.eq.${S.profile.id}`);
+  q=q.order('created_at',{ascending:false});
+  const{data:chats}=await q;
+  $('msg-count').textContent=`${chats?.length||0} conversation${chats?.length!==1?'s':''}`;
+  hideEl($('msg-notif'));
+  if(!chats?.length){$('chat-list-wrap').innerHTML=`<div class="empty"><div class="ei">💬</div><p>No conversations yet</p><p style="font-size:13px;margin-top:5px">Start a trade from the marketplace</p></div>`;return;}
+  const stC={received:'var(--green)',scammed:'var(--red)',ghosted:'var(--muted)',disputed:'var(--orange)',open:'var(--blue)'};
+  $('chat-list-wrap').innerHTML=`<div class="chat-list">${chats.map(c=>{
+    const isBuyer=c.buyer_id===S.profile.id,isMM=c.middleman_id===S.profile.id;
+    const otherName=isMM?c.buyer?.username:isBuyer?c.seller?.username:c.buyer?.username;
+    return`<div class="chat-row${isMM?' mm-row':''}" onclick="openChatById('${c.id}')">
+      <div class="avatar" style="width:40px;height:40px;font-size:15px;color:#fff;background:${ac(otherName||'?')}">${(otherName||'?').slice(0,2).toUpperCase()}</div>
+      <div class="cri"><div class="crt">${c.ads?.title||'Unknown listing'}</div><div class="crs">${isMM?'🛡️ You are middleman · ':''}With ${otherName||'?'} · ${isBuyer?'Buyer':'Seller'}</div></div>
+      <div class="crm">
+        ${bdg(c.status.toUpperCase(),stC[c.status]||'var(--blue)')}
+        ${c.ads?`<span style="font-size:11px;color:var(--gold);font-weight:600">B$ ${c.ads.price?.toLocaleString()}</span>`:''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+async function openChatById(chatId){
+  const{data:cd}=await sb.from('chats').select('*').eq('id',chatId).single();
+  if(!cd){toast('Chat not found.','e');return;}
+  S.chat.id=chatId;S.chat.data=cd;
+  const{data:ad}=await sb.from('ads').select('*').eq('id',cd.ad_id).single();
+  S.chat.adData=ad;
+  let otherId=isAdmin()&&cd.middleman_id===S.profile.id?cd.buyer_id:(cd.buyer_id===S.profile.id?cd.seller_id:cd.buyer_id);
+  const{data:op}=await sb.from('profiles').select('*').eq('id',otherId).single();
+  S.chat.otherProfile=op;
+  const{data:msgs}=await sb.from('messages').select('*,profiles:sender_id(username)').eq('chat_id',chatId).order('created_at',{ascending:true});
+  S.chat.msgs=(msgs||[]).filter(m=>!is24h(m.created_at));
+  renderChatPage();goPage('chat');subscribeChat(chatId);
+}
+async function openTrade(adId){
+  const ad=S.ads.find(a=>a.id===adId);
+  if(!ad||ad.seller_id===S.profile.id)return;
+  S.chat.adData=ad;
+  let{data:ex}=await sb.from('chats').select('*').eq('ad_id',adId).eq('buyer_id',S.profile.id).single();
+  if(ex){S.chat.id=ex.id;S.chat.data=ex;}
+  else{
+    const{data:nc,error}=await sb.from('chats').insert({ad_id:adId,buyer_id:S.profile.id,seller_id:ad.seller_id,status:'open',middleman_invoked:false}).select().single();
+    if(error){toast('Failed to open chat.','e');return;}
+    S.chat.id=nc.id;S.chat.data=nc;
+    await sb.from('messages').insert({chat_id:nc.id,sender_id:null,content:`🏪 Trade chat opened for "${ad.title}". Stay safe — use a middleman for high-value items!`,is_system:true,system_type:'info'});
+  }
+  const{data:op}=await sb.from('profiles').select('*').eq('id',ad.seller_id).single();
+  S.chat.otherProfile=op;
+  const{data:msgs}=await sb.from('messages').select('*,profiles:sender_id(username)').eq('chat_id',S.chat.id).order('created_at',{ascending:true});
+  S.chat.msgs=(msgs||[]).filter(m=>!is24h(m.created_at));
+  renderChatPage();goPage('chat');subscribeChat(S.chat.id);
+}
+function leaveChat(){unsubChat();goPage('messages');}
+function renderChatPage(){
+  const other=S.chat.otherProfile,ad=S.chat.adData,cd=S.chat.data,isClosed=cd?.status!=='open';
+  if(other){av($('chat-av'),other.username,32);$('chat-other-name').textContent=other.username+(isAdmin()&&cd?.middleman_id===S.profile.id?' (Middleman)':'');$('chat-other-stat').textContent=`● Online · ${other.trades||0} trades · ★${other.rep||0}`;}
+  $('chat-mm-badge').innerHTML=cd?.middleman_invoked?bdg('🛡️ MM Active','var(--gold)'):'';
+  const st=cd?.status||'open';$('chat-status-badge').innerHTML=st!=='open'?bdg(st.toUpperCase(),SC[st]||'var(--blue)'):'';
+  if(ad){
+    $('chat-ad-img-wrap').innerHTML=ad.image_url?`<img src="${ad.image_url}" style="width:100%;height:95px;object-fit:cover;display:block" onerror="this.style.opacity='.2'">`:`<div style="width:100%;height:95px;display:flex;align-items:center;justify-content:center;font-size:32px;opacity:.2">📦</div>`;
+    $('chat-ad-title').textContent=ad.title;$('chat-ad-price').textContent=ad.price?.toLocaleString()||'?';
+    $('chat-ad-badges').innerHTML=bdg(ad.type?.toUpperCase()||'SELL',ad.type==='sell'?'var(--green)':'var(--purple)')+' '+bdg(ad.category||'','var(--blue)');
+  }
+  $('chat-msgs').innerHTML='';S.chat.msgs.forEach(m=>appendMsg(m));scrollBot();
+  renderChatActions();
+  isClosed?(hideEl($('chat-inp-area')),showEl($('chat-closed-note'))):(showEl($('chat-inp-area')),hideEl($('chat-closed-note')));
+  if(other){
+    av($('chat-trader-av'),other.username,34);$('chat-trader-name').textContent=other.username;$('chat-trader-trades').textContent=`${other.trades||0} trades completed`;
+    const rl=(other.rep||0)>=50?['🏆 Pro','var(--gold)']:(other.rep||0)>=10?['✅ Trusted','var(--green)']:['🆕 New','var(--muted)'];
+    $('chat-trader-stats').innerHTML=`<div class="tstat"><span class="tsl">Reputation</span><span style="color:var(--gold);font-weight:700">★ ${other.rep||0}</span></div><div class="tstat"><span class="tsl">Status</span>${bdg(rl[0],rl[1])}</div>`;
+  }
+}
+function renderChatActions(){
+  const cd=S.chat.data,isClosed=cd?.status!=='open',mm=cd?.middleman_invoked,st=cd?.status||'open';
+  let h='';
+  if(isClosed){const sc2={received:'var(--green)',scammed:'var(--red)',ghosted:'var(--muted)',disputed:'var(--orange)'};h+=`<div class="trade-closed-badge" style="background:${sc2[st]||'var(--blue)'}18;border:1px solid ${sc2[st]||'var(--blue)'}44;color:${sc2[st]||'var(--blue)'}">Trade: ${st.toUpperCase()}</div>`;if(st==='scammed')h+=`<button class="abt disc" onclick="window.open('https://discord.gg/7MbtXspabT','_blank')">💬 Discord Support</button>`;}
+  else{if(!mm)h+=`<button class="abt mm" onclick="requestMM()">🛡️ Request Middleman</button>`;else h+=`<div class="mm-active">✓ Middleman active — kry pinged</div>`;h+=`<button class="abt recv" onclick="setTS('received')">✅ Mark as Received</button><button class="abt scam" onclick="setTS('scammed')">🚨 Report Scam</button><button class="abt ghost" onclick="setTS('ghosted')">👻 Mark Ghosted</button><button class="abt disp" onclick="setTS('disputed')">⚖️ Open Dispute</button>`;}
+  $('chat-action-btns').innerHTML=h;
+}
+function appendMsg(msg){
+  const c=$('chat-msgs');if(!c)return;
+  const el=document.createElement('div');
+  if(msg.is_system){
+    const tc=msg.system_type==='warn'?' warn':msg.system_type==='ok'?' ok':msg.system_type==='bad'?' bad':'';
+    el.className=`msg-sys${tc}`;el.innerHTML=`<span>${msg.content}</span>`;
+  }else{
+    const isMe=msg.sender_id===S.profile?.id;
+    const sname=msg.profiles?.username||ADMIN;
+    const isMM=!msg.sender_id&&!msg.is_system;
+    el.className=`msg-row${isMe?' me':''}${isMM?' mm-msg':''}`;
+    el.innerHTML=`${!isMe?`<div class="avatar" style="width:24px;height:24px;font-size:9px;color:#fff;background:${ac(sname)}">${sname.slice(0,2).toUpperCase()}</div>`:''}
+    <div>${!isMe?`<div class="msg-sender">${sname}${isMM?' 🛡️':''}</div>`:''}
+    <div class="msg-bubble">${msg.content}</div>
+    <div class="msg-time">${ft(msg.created_at)}</div></div>`;
+  }
+  c.appendChild(el);
+}
+function scrollBot(){const c=$('chat-msgs');if(c)c.scrollTop=c.scrollHeight;}
+async function sendChatMsg(){
+  const input=$('chat-input'),content=input.value.trim();
+  if(!content||S.chat.data?.status!=='open')return;
+  input.value='';
+  await sb.from('messages').insert({chat_id:S.chat.id,sender_id:S.profile.id,content,is_system:false});
+}
+async function requestMM(){
+  const{data:kry}=await sb.from('profiles').select('id').eq('username',ADMIN).single();
+  const upd={middleman_invoked:true};if(kry)upd.middleman_id=kry.id;
+  await sb.from('chats').update(upd).eq('id',S.chat.id);
+  S.chat.data.middleman_invoked=true;if(kry)S.chat.data.middleman_id=kry.id;
+  await sb.from('messages').insert([
+    {chat_id:S.chat.id,sender_id:null,content:`🛡️ Middleman requested! @${ADMIN} has been pinged and will join shortly.`,is_system:true,system_type:'warn'},
+    {chat_id:S.chat.id,sender_id:null,content:`👋 MiddleMan Bot here!\n\n✅ Confirm trade details in this chat.\n⛔ Do NOT send items before middleman approval.\n📩 Admin @${ADMIN} has been notified and will join soon.\n\nStay safe! 🛡️`,is_system:false}
+  ]);
+  renderChatActions();toast('Middleman requested — kry has been pinged! 🛡️','i');
+}
+async function setTS(status){
+  const msgs={received:['✅ Trade marked as Received! Both parties earned B$50 and +1 rep.','ok'],scammed:['🚨 Scam reported! Join Discord immediately with screenshots and your trade ID.','bad'],ghosted:['👻 Trade marked as Ghosted. User flagged for review.',''],disputed:['⚖️ Dispute opened. Admin will review via Discord.','warn']};
+  await sb.from('chats').update({status}).eq('id',S.chat.id);S.chat.data.status=status;
+  const[text,type]=msgs[status]||['Trade updated.',''];
+  await sb.from('messages').insert({chat_id:S.chat.id,sender_id:null,content:text,is_system:true,system_type:type});
+  if(status==='received'){await sb.rpc('complete_trade',{p_chat_id:S.chat.id});await refreshProfile();}
+  renderChatActions();hideEl($('chat-inp-area'));showEl($('chat-closed-note'));
+  $('chat-status-badge').innerHTML=status!=='open'?bdg(status.toUpperCase(),SC[status]||'var(--blue)'):'';
+  if(status==='scammed')toast('Scam reported. Go to Discord now! 🚨','e');else toast(`Trade marked as ${status}.`,'i');
+}
+function subscribeChat(chatId){
+  unsubChat();
+  S.chat.sub=sb.channel(`chat-${chatId}`).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`chat_id=eq.${chatId}`},async payload=>{
+    if(S.chat.msgs.find(m=>m.id===payload.new.id)||is24h(payload.new.created_at))return;
+    let msg={...payload.new};
+    if(msg.sender_id){const{data}=await sb.from('profiles').select('username').eq('id',msg.sender_id).single();msg.profiles=data;}
+    S.chat.msgs.push(msg);appendMsg(msg);scrollBot();
+  }).subscribe();
+}
+function unsubChat(){if(S.chat.sub){S.chat.sub.unsubscribe();S.chat.sub=null;}}
+async function renderProfile(){
+  if(!S.profile)return;
+  const p=S.profile;
+  const rl=(p.rep||0)>=50?['🏆 Pro Trader','var(--gold)']:(p.rep||0)>=10?['✅ Trusted','var(--green)']:['🆕 New Trader','var(--muted)'];
+  $('prof-hero').innerHTML=`<div class="avatar" style="width:66px;height:66px;background:${ac(p.username)};font-size:25px;color:#fff">${p.username.slice(0,2).toUpperCase()}</div>
+  <div><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:4px"><h1 style="font-size:24px;font-weight:800;letter-spacing:-.5px">${p.username}</h1>${bdg(rl[0],rl[1])}${isAdmin()?`<span class="admin-crown">ADMIN · MIDDLEMAN</span>`:''}</div>
+  <p style="color:var(--muted);font-size:13px">Member since ${new Date(p.created_at).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</p></div>`;
+  $('prof-stats').innerHTML=`<div class="scard"><div class="slbl">B$ Balance</div><div class="sval" style="color:var(--gold)">${(p.balance||0).toLocaleString()}</div></div><div class="scard"><div class="slbl">Reputation</div><div class="sval" style="color:var(--green)">★ ${p.rep||0}</div></div><div class="scard"><div class="slbl">Trades Done</div><div class="sval" style="color:var(--blue)">${p.trades||0}</div></div><div class="scard" id="plcard"><div class="slbl">Listings</div><div class="sval" style="color:var(--purple)">—</div></div>`;
+  const{data:myAds}=await sb.from('ads').select('*').eq('seller_id',p.id).order('created_at',{ascending:false});
+  $('my-ads-title').textContent=`My Listings (${myAds?.length||0})`;document.querySelector('#plcard .sval').textContent=myAds?.length||0;
+  $('my-ads-list').innerHTML=!myAds?.length?'<p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">No listings yet</p>':myAds.map(ad=>`<div class="lrow">${ad.image_url?`<img class="lthumb" src="${ad.image_url}" alt="" onerror="this.style.opacity='.2'">`:`<div class="lthumb">📦</div>`}<div class="linfo"><div class="lname">${ad.title}</div><div class="lprice">B$ ${ad.price.toLocaleString()}</div></div>${bdg(ad.type.toUpperCase(),ad.type==='sell'?'var(--green)':'var(--purple)')}</div>`).join('');
+  let tq=sb.from('chats').select('*,ads(title,price)');
+  if(isAdmin())tq=tq.or(`buyer_id.eq.${p.id},seller_id.eq.${p.id},middleman_id.eq.${p.id}`);
+  else tq=tq.or(`buyer_id.eq.${p.id},seller_id.eq.${p.id}`);
+  tq=tq.order('created_at',{ascending:false});
+  const{data:myChats}=await tq;
+  $('my-trades-title').textContent=`Trade History (${myChats?.length||0})`;
+  const stcol={received:'var(--green)',scammed:'var(--red)',ghosted:'var(--muted)',disputed:'var(--orange)',open:'var(--blue)'};
+  $('my-trades-list').innerHTML=!myChats?.length?'<p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">No trades yet</p>':myChats.map(c=>`<div class="trow" onclick="openChatById('${c.id}')"><div><div class="tname">${c.ads?.title||'Unknown Ad'}</div><div class="tmeta">${c.middleman_invoked?'MM used · ':''}${c.status}${isAdmin()&&c.middleman_id===p.id?' · You were MM':''}</div></div>${bdg(c.status.toUpperCase(),stcol[c.status]||'var(--blue)')}<span class="topen">Open →</span></div>`).join('');
+}
+let gS=false,gSide='heads';
+function switchGTab(t,b){document.querySelectorAll('.gtab').forEach(x=>x.classList.remove('active'));b.classList.add('active');['coinflip','dice','slots'].forEach(x=>{const el=$('gt-'+x);if(el)el.classList.toggle('hidden',x!==t);});}
+function setBet(v){$('bet-coin').value=Math.min(v,S.profile?.balance||0);}function setBet2(v){$('bet-dice').value=Math.min(v,S.profile?.balance||0);}function setBet3(v){$('bet-slots').value=Math.min(v,S.profile?.balance||0);}
+function betH(){setBet(Math.floor((S.profile?.balance||0)/2));}function betH2(){setBet2(Math.floor((S.profile?.balance||0)/2));}function betH3(){setBet3(Math.floor((S.profile?.balance||0)/2));}
+function betM(){setBet(S.profile?.balance||0);}function betM2(){setBet2(S.profile?.balance||0);}function betM3(){setBet3(S.profile?.balance||0);}
+function selectSide(s){gSide=s;$('sbtn-heads').classList.toggle('active',s==='heads');$('sbtn-tails').classList.toggle('active',s==='tails');}
+function addGH(type,won,amt){const h=$('gamble-history');const row=document.createElement('div');row.className=`hist-row ${won?'win':'lose'}`;row.innerHTML=`<div><div class="ht">${type}</div><div class="htime">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div><div class="hamt">${won?'+':'-'}B$${Math.abs(amt).toLocaleString()}</div>`;if(h.firstChild)h.insertBefore(row,h.firstChild);else h.appendChild(row);h.querySelectorAll('p').forEach(p=>p.remove());const rows=h.querySelectorAll('.hist-row');if(rows.length>12)rows[rows.length-1].remove();}
+async function playCoinFlip(){
+  if(gS)return;const bet=parseInt($('bet-coin').value)||0;
+  if(bet<1)return toast('Enter a valid bet.','e');if(bet>(S.profile?.balance||0))return toast('Not enough B$.','e');
+  gS=true;$('flip-btn').disabled=true;$('coin-result').innerHTML='';$('coin-display').className='coin-em coin-spin';
+  await updateBalance(-bet);await new Promise(r=>setTimeout(r,1400));
+  $('coin-display').className='coin-em';const out=Math.random()>.5?'heads':'tails';const won=out===gSide;
+  $('coin-display').textContent=out==='heads'?'😊':'🌕';if(won)await updateBalance(bet*2);
+  addGH('Coin Flip',won,won?bet:-bet);
+  $('coin-result').innerHTML=`<div class="game-res ${won?'win':'lose'}" style="margin-top:14px"><div class="ramt">${won?`+B$${bet.toLocaleString()} WIN!`:`-B$${bet.toLocaleString()} LOSE`}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Result: ${out}</div></div>`;
+  gS=false;$('flip-btn').disabled=false;
+}
+async function playDice(){
+  if(gS)return;const bet=parseInt($('bet-dice').value)||0;
+  if(bet<1)return toast('Enter a valid bet.','e');if(bet>(S.profile?.balance||0))return toast('Not enough B$.','e');
+  gS=true;$('dice-btn').disabled=true;$('dice-result').innerHTML='';$('dice-display').className='dice-em dice-spin';
+  await updateBalance(-bet);await new Promise(r=>setTimeout(r,1000));
+  $('dice-display').className='dice-em';const roll=Math.floor(Math.random()*6)+1;
+  $('dice-display').textContent=['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1];const won=roll>=4;if(won)await updateBalance(bet*2);
+  addGH('Dice',won,won?bet:-bet);
+  $('dice-result').innerHTML=`<div class="game-res ${won?'win':'lose'}" style="margin-top:14px"><div class="ramt">Roll: ${roll} — ${won?`+B$${bet.toLocaleString()} WIN!`:`-B$${bet.toLocaleString()} LOSE`}</div></div>`;
+  gS=false;$('dice-btn').disabled=false;
+}
+async function playSlots(){
+  if(gS)return;const bet=parseInt($('bet-slots').value)||0;
+  if(bet<1)return toast('Enter a valid bet.','e');if(bet>(S.profile?.balance||0))return toast('Not enough B$.','e');
+  gS=true;$('slots-btn').disabled=true;$('slots-result').innerHTML='';[0,1,2].forEach(i=>{const r=$('s'+i);if(r)r.className='sreel';});
+  await updateBalance(-bet);
+  const SY=['🍒','🍋','🍊','⭐','💎','🔔'];let n=0;
+  await new Promise(resolve=>{const iv=setInterval(()=>{[0,1,2].forEach(i=>{const r=$('s'+i);if(r)r.textContent=SY[~~(Math.random()*6)];});if(++n>16){clearInterval(iv);const f=[SY[~~(Math.random()*6)],SY[~~(Math.random()*6)],SY[~~(Math.random()*6)]];[0,1,2].forEach(i=>{const r=$('s'+i);if(r)r.textContent=f[i];});const won=f[0]===f[1]&&f[1]===f[2];const mult=f[0]==='💎'?10:f[0]==='⭐'?5:3;if(won){[0,1,2].forEach(i=>{const r=$('s'+i);if(r)r.classList.add('win');});}(async()=>{if(won)await updateBalance(bet*mult);addGH('Slots',won,won?bet*(mult-1):-bet);$('slots-result').innerHTML=`<div class="game-res ${won?'win':'lose'}" style="margin-top:14px"><div class="ramt">${won?`${f[0]}${f[0]}${f[0]} — ${mult}× WIN! +B$${(bet*(mult-1)).toLocaleString()}`:`-B$${bet.toLocaleString()} — No match`}</div></div>`;gS=false;$('slots-btn').disabled=false;resolve();})();}},90);});
+}
+function buildFaq(){$('faq-list').innerHTML=FAQS.map((f,i)=>`<div class="faq-item" id="faq-${i}"><button class="faq-q" onclick="toggleFaq(${i})"><span>${f[0]}</span><span class="plus">+</span></button><div class="faq-a hidden">${f[1]}</div></div>`).join('');}
+function toggleFaq(i){const item=$('faq-'+i);const ans=item.querySelector('.faq-a');const wasOpen=item.classList.contains('open');document.querySelectorAll('.f
